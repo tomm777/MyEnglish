@@ -29,7 +29,7 @@ const Home = () => {
 						alt="Your Company"
 					/>
 					<h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-						Sign in to your account
+						로그인이 필요한 서비스입니다.
 					</h2>
 				</div>
 
@@ -40,7 +40,7 @@ const Home = () => {
 								htmlFor="email"
 								className="block text-sm font-medium leading-6 text-gray-900"
 							>
-								Email address
+								ID
 							</label>
 							<div className="mt-2">
 								<input
@@ -62,14 +62,7 @@ const Home = () => {
 								>
 									Password
 								</label>
-								<div className="text-sm">
-									<a
-										href="#"
-										className="font-semibold text-indigo-600 hover:text-indigo-500"
-									>
-										Forgot password?
-									</a>
-								</div>
+								<div className="text-sm"></div>
 							</div>
 							<div className="mt-2">
 								<input
@@ -86,22 +79,12 @@ const Home = () => {
 						<div>
 							<button
 								type="submit"
-								className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+								className="mt-10 flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
 							>
 								Sign in
 							</button>
 						</div>
 					</form>
-
-					<p className="mt-10 text-center text-sm text-gray-500">
-						Not a member?{' '}
-						<a
-							href="#"
-							className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
-						>
-							Start a 14 day free trial
-						</a>
-					</p>
 				</div>
 			</div>
 		</>
