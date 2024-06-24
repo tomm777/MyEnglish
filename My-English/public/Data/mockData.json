@@ -1,0 +1,68 @@
+[
+	{
+		"index": 1,
+		"word": "accommodation",
+		"classification": "N",
+		"meaning": "거처, 숙소"
+	},
+	{
+		"index": 2,
+		"word": "beneficial",
+		"classification": "A",
+		"meaning": "유익한, 이로운"
+	},
+	{
+		"index": 3,
+		"word": "comprehensive",
+		"classification": "A",
+		"meaning": "포괄적인, 종합적인"
+	},
+	{
+		"index": 4,
+		"word": "diverse",
+		"classification": "A",
+		"meaning": "다양한"
+	},
+	{
+		"index": 5,
+		"word": "efficient",
+		"classification": "A",
+		"meaning": "효율적인"
+	},
+	{
+		"index": 6,
+		"word": "generate",
+		"classification": "V",
+		"meaning": "생성하다, 발생시키다"
+	},
+	{
+		"index": 7,
+		"word": "implement",
+		"classification": "V",
+		"meaning": "실행하다"
+	},
+	{
+		"index": 8,
+		"word": "mandatory",
+		"classification": "A",
+		"meaning": "의무적인, 필수의"
+	},
+	{
+		"index": 9,
+		"word": "negotiate",
+		"classification": "V",
+		"meaning": "협상하다"
+	},
+	{
+		"index": 10,
+		"word": "reliable",
+		"classification": "A",
+		"meaning": "신뢰할 수 있는"
+	},
+	{
+		"index": 11,
+		"word": "temporarily",
+		"classification": "AD",
+		"meaning": "일시적으로"
+	}
+]
