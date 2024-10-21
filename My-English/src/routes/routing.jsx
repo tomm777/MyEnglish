@@ -1,8 +1,11 @@
 import { createBrowserRouter } from 'react-router-dom';
-import Login from '../pages';
-import SignUp from '../pages/SignUp';
 import Home from '../pages';
+import Test from '../pages/Test';
+import WordsSet from '../pages/WordsSet';
 import Layout from '../components/Layout';
+import Login from '../pages/Login';
+import SignUp from '../pages/SignUp';
+import Modal from '../components/Modal';
 
 const router = createBrowserRouter([
 	{
@@ -13,6 +16,14 @@ const router = createBrowserRouter([
 				path: '',
 				element: <Home />,
 			},
+			{
+				path: '/test',
+				element: <Test />,
+			},
+			{
+				path: '/wordsset',
+				element: <WordsSet />,
+			},
 		],
 	},
 	{
@@ -22,6 +33,10 @@ const router = createBrowserRouter([
 	{
 		path: '/signup',
 		element: <SignUp />,
+	},
+	{
+		path: '/modal',
+		element: <Modal />,
 	},
 ]);
 

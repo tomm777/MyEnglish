@@ -1,6 +1,6 @@
-import { collection, getDocs } from '@firebase/firestore';
-import { useEffect } from 'react';
-import { db } from '../firebase/firebase';
+// import { collection, getDocs } from '@firebase/firestore';
+// import { useEffect } from 'react';
+// import { db } from '../firebase/firebase';
 
 const Login = () => {
 	// useEffect(() => {
@@ -26,13 +26,12 @@ const Login = () => {
 					<img
 						className="mx-auto h-10 w-auto"
 						src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600"
-						alt="Your Company"
+						alt="My English"
 					/>
 					<h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
 						로그인이 필요한 서비스입니다.
 					</h2>
 				</div>
-
 				<div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
 					<form className="space-y-6" action="#" method="POST">
 						<div>

@@ -9,40 +9,26 @@ import {
 } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Outlet } from 'react-router-dom';
+import NavBar from '../NavBar';
 
-function classNames(...classes) {
+const classNames = (...classes) => {
 	return classes.filter(Boolean).join(' ');
-}
+};
+
 const user = {
 	name: 'Tom Cook',
 	email: 'tom@example.com',
 	imageUrl:
 		'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
 };
-const navigation = [
-	{ name: '홈', href: '#', current: true },
-	{ name: '테스트', href: '#', current: false },
-	{ name: '단어장관리', href: '#', current: false },
-	{ name: 'Calendar', href: '#', current: false },
-	{ name: '단어추가', href: '#', current: false },
-];
 const userNavigation = [
 	{ name: 'Your Profile', href: '#' },
 	{ name: 'Settings', href: '#' },
 	{ name: '로그아웃', href: '#' },
 ];
-
 const Layout = () => {
 	return (
 		<>
-			{/*
-			This example requires updating your template:
-	
-			```
-			<html class="h-full bg-gray-100">
-			<body class="h-full">
-			```
-		  */}
 			<div className="min-h-full">
 				<Disclosure as="nav" className="bg-gray-800">
 					{({ open }) => (
@@ -53,13 +39,14 @@ const Layout = () => {
 										<div className="flex-shrink-0">
 											<img
 												className="h-8 w-8"
-												src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
-												alt="Your Company"
+												src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/logo.svg"
+												alt="My English"
 											/>
 										</div>
-										<div className="hidden md:block">
-											<div className="ml-10 flex items-baseline space-x-4">
-												{navigation.map(item => (
+										{/* <div className="hidden md:block">
+											<div className="ml-10 flex items-baseline space-x-4"> */}
+										<NavBar></NavBar>
+										{/* {navigation.map(item => (
 													<a
 														key={item.name}
 														href={item.href}
@@ -77,9 +64,9 @@ const Layout = () => {
 													>
 														{item.name}
 													</a>
-												))}
-											</div>
-										</div>
+												))} */}
+										{/* </div>
+										</div> */}
 									</div>
 									<div className="hidden md:block">
 										<div className="ml-4 flex items-center md:ml-6">
@@ -165,7 +152,7 @@ const Layout = () => {
 
 							<DisclosurePanel className="md:hidden">
 								<div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
-									{navigation.map(item => (
+									{/* {navigation.map(item => (
 										<DisclosureButton
 											key={item.name}
 											as="a"
@@ -184,7 +171,7 @@ const Layout = () => {
 										>
 											{item.name}
 										</DisclosureButton>
-									))}
+									))} */}
 								</div>
 								<div className="border-t border-gray-700 pb-3 pt-4">
 									<div className="flex items-center px-5">
@@ -227,18 +214,17 @@ const Layout = () => {
 					)}
 				</Disclosure>
 
-				<header className="bg-white shadow">
+				{/* <header className="bg-white shadow">
 					<div className="mx-auto max-w-7xl px-4 py-2	 sm:px-6 lg:px-8">
 						<h1 className="text-3xl font-bold tracking-tight text-gray-900">
 							단어 목록
 						</h1>
 					</div>
-				</header>
-				<main>
+				</header> */}
+				{/* <main>
 					<div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-						{/* Your content */}
 					</div>
-				</main>
+				</main> */}
 			</div>
 			<Outlet />
 		</>
