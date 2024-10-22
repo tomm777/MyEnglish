@@ -3,7 +3,9 @@ import WordsTable from '../../components/Layout/WordsTable';
 const WordsSet = () => {
 	return (
 		<>
-			<WordsTable />
+			<div className="mt-10">
+				<WordsTable />
+			</div>
 		</>
 	);
 };

@@ -1,8 +1,7 @@
 const navigation = [
 	{ name: '홈', href: '/' },
 	{ name: '단어시험', href: '/test' },
-	{ name: '단어장관리', href: '/wordsset' }, // 변경된 href
-	{ name: '단어추가', href: '/addword' }, // 변경된 href
+	{ name: '단어장관리', href: '/wordsset' },
 ];
 const classNames = (...classes) => {
 	return classes.filter(Boolean).join(' ');
