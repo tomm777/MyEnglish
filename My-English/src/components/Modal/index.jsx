@@ -1,16 +1,46 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import InputValidation from '../../constant/regex';
+import useFocusOutValidation from '../../hooks/useValidation';
 
-const Modal = ({ onClose }) => {
+const Modal = ({ onClose, onAddWord }) => {
+	// 품사구분
+	const [classficationValue, setClassfication] = useState('');
+	// custom hook 사용
+	// hook에 Word와 meaning의 정규식을 구분하여 넘겨서 리턴값 취득
+	const [wordRef, isCheckWord, handleWordFocusOut] = useFocusOutValidation(
+		InputValidation.en,
+	);
+	const [meaningRef, isCheckMeaning, handleMeaningFocusOut] =
+		useFocusOutValidation(InputValidation.kr);
+
+	const handleOnChange = e => {
+		const { value } = e.target;
+		setClassfication(value);
+	};
+	// Submit 핸들러
+	const handleSubmit = e => {
+		e.preventDefault();
+		if (isCheckWord || isCheckMeaning) {
+			return;
+		}
+		const newWords = {
+			word: wordRef.current.value,
+			meaning: meaningRef.current.value,
+			classification: classficationValue,
+		};
+		onAddWord(newWords);
+		setClassfication('');
+		wordRef.current.value = '';
+		meaningRef.current.value = '';
+		// setInputValue({ word: '', meaning: '', classification: '' });
+	};
+
 	return (
 		<>
 			<div className="fixed inset-0 bg-black bg-opacity-50 z-40">
 				<div className="flex justify-center items-center h-full">
-					{' '}
-					{/* 중앙 정렬을 위한 flex 컨테이너 */}
 					<div className="relative p-4 w-full max-w-lg">
-						{/* Modal content */}
 						<div className="relative bg-white rounded-lg shadow dark:bg-gray-700">
-							{/* Modal header */}
 							<div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
 								<h3 className="text-lg font-semibold text-gray-900 dark:text-white">
 									단어 추가
@@ -37,8 +67,10 @@ const Modal = ({ onClose }) => {
 									</svg>
 								</button>
 							</div>
-							{/* Modal body */}
-							<form className="p-4 md:p-5">
+							<form
+								className="p-4 md:p-5"
+								onSubmit={handleSubmit}
+							>
 								<div className="grid gap-4 mb-4 grid-cols-2">
 									<div className="col-span-2">
 										<label
@@ -48,14 +80,22 @@ const Modal = ({ onClose }) => {
 											단어
 										</label>
 										<input
+											ref={wordRef}
 											type="text"
 											name="word"
-											id="word"
+											onBlur={handleWordFocusOut}
 											className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
 											required
 										/>
+										{isCheckWord && (
+											<p className="mt-2 text-sm text-red-600 dark:text-red-500">
+												<span className="font-medium">
+													영어를 입력하세요.
+												</span>
+											</p>
+										)}
 									</div>
-									<div className="col-span-2 ">
+									<div className="col-span-2">
 										<label
 											className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
 											htmlFor="meaning"
@@ -63,12 +103,22 @@ const Modal = ({ onClose }) => {
 											뜻
 										</label>
 										<input
+											ref={meaningRef}
 											type="text"
 											name="meaning"
-											id="meaning"
+											// value={inputValue.meaning}
+											// onChange={handleOnChange}
+											onBlur={handleMeaningFocusOut}
 											className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
 											required
 										/>
+										{isCheckMeaning && (
+											<p className="mt-2 text-sm text-red-600 dark:text-red-500">
+												<span className="font-medium">
+													한글을 입력하세요.
+												</span>
+											</p>
+										)}
 									</div>
 									<div className="col-span-2 sm:col-span-1">
 										<label
@@ -78,7 +128,8 @@ const Modal = ({ onClose }) => {
 											품사
 										</label>
 										<select
-											id="classification"
+											name="classification"
+											onChange={handleOnChange}
 											required
 											className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
 										>

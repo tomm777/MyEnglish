@@ -4,7 +4,7 @@ const WordsSet = () => {
 	return (
 		<>
 			<div className="mt-10">
-				<WordsTable />
+				<WordsTable props="edit" />
 			</div>
 		</>
 	);

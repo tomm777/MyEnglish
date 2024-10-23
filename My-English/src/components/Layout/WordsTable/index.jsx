@@ -2,13 +2,11 @@ import { useEffect, useState } from 'react';
 import data from '../../../../public/Data/mockData.json';
 import Modal from '../../Modal';
 
-const WordsTable = () => {
-	const type = 'edit';
+const WordsTable = ({ props }) => {
 	const [editIndex, setEditIndex] = useState(null);
 	const [tableData, setTableData] = useState([]);
 	const [category, setCatecory] = useState('ALL');
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	// const [editMode, setEditMode] = useState(false);
 	const [updatedData, setUpdatedData] = useState(tableData);
 	useEffect(() => {
 		setTableData(data);
@@ -37,8 +35,6 @@ const WordsTable = () => {
 		return '숙어';
 	};
 	const handleInputChange = (index, field, value) => {
-		console.log(index, field, value);
-
 		const newData = [...updatedData];
 		newData[index] = { ...newData[index], [field]: value }; // 수정된 필드 업데이트
 		setUpdatedData(newData); // 상태 업데이트
@@ -71,12 +67,20 @@ const WordsTable = () => {
 	const closeModal = () => {
 		setIsModalOpen(false); // 모달 닫기
 	};
+	// 단어 추가
+	const handleAddWord = newWord => {
+		setTableData(prevData => [...prevData, newWord]);
+		setUpdatedData(prevData => [...prevData, newWord]);
+		setIsModalOpen(false);
+	};
 
 	return (
 		<>
-			{isModalOpen && <Modal onClose={closeModal} />}
+			{isModalOpen && (
+				<Modal onClose={closeModal} onAddWord={handleAddWord} />
+			)}
 			<div style={{ maxWidth: '90rem', margin: '0 auto' }}>
-				{type === 'edit' ? (
+				{props === 'edit' ? (
 					<div className="flex justify-end">
 						<button
 							onClick={openModal}
@@ -120,7 +124,7 @@ const WordsTable = () => {
 									></option>
 								</select>
 							</th>
-							{type === 'edit' ? (
+							{props === 'edit' ? (
 								<th
 									className="border-b border-r dark:border-slate-600 font-medium p-4 pl-4 pt-3 pb-3 text-slate-400 dark:text-slate-200 text-left"
 									style={{ width: '12%' }}
@@ -143,28 +147,36 @@ const WordsTable = () => {
 									// style={{ minWidth: '16rem' }}
 								>
 									{editIndex === data.index - 1 &&
-									type === 'edit' ? (
-										<input
-											type="text"
-											value={
-												updatedData[data.index - 1].word
-											}
-											onChange={e =>
-												handleInputChange(
-													data.index - 1,
-													'word',
-													e.target.value,
-												)
-											}
-											className="border rounded p-1"
-										/>
+									props === 'edit' ? (
+										<>
+											<input
+												type="text"
+												value={
+													updatedData[data.index - 1]
+														.word
+												}
+												onChange={e =>
+													handleInputChange(
+														data.index - 1,
+														'word',
+														e.target.value,
+													)
+												}
+												className="border rounded p-1"
+											/>
+											<p className="mt-2 text-sm text-red-600 dark:text-red-500">
+												<span className="font-medium">
+													한글을 입력하세요.
+												</span>{' '}
+											</p>
+										</>
 									) : (
 										data.word
 									)}
 								</td>
 								<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
 									{editIndex === data.index - 1 &&
-									type === 'edit' ? (
+									props === 'edit' ? (
 										<input
 											type="text"
 											value={
@@ -186,7 +198,7 @@ const WordsTable = () => {
 								</td>
 								<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
 									{editIndex === data.index - 1 &&
-									type === 'edit' ? (
+									props === 'edit' ? (
 										<select
 											value={
 												updatedData[data.index - 1]
@@ -211,7 +223,7 @@ const WordsTable = () => {
 										getPartOfSpeech(data.classification)
 									)}
 								</td>
-								{type === 'edit' ? (
+								{props === 'edit' ? (
 									<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
 										{editIndex === data.index - 1 ? (
 											<>
