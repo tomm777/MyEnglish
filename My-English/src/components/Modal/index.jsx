@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import InputValidation from '../../constant/regex';
 import useFocusOutValidation from '../../hooks/useValidation';
 
 const Modal = ({ onClose, onAddWord }) => {
@@ -7,11 +6,11 @@ const Modal = ({ onClose, onAddWord }) => {
 	const [classficationValue, setClassfication] = useState('');
 	// custom hook 사용
 	// hook에 Word와 meaning의 정규식을 구분하여 넘겨서 리턴값 취득
-	const [wordRef, isCheckWord, handleWordFocusOut] = useFocusOutValidation(
-		InputValidation.en,
-	);
+	const [wordRef, isCheckWord, handleWordFocusOut] = useFocusOutValidation();
+	// const [testRef, sdfs, sfs] = useFocusOutValidation();
+
 	const [meaningRef, isCheckMeaning, handleMeaningFocusOut] =
-		useFocusOutValidation(InputValidation.kr);
+		useFocusOutValidation();
 
 	const handleOnChange = e => {
 		const { value } = e.target;
@@ -90,7 +89,7 @@ const Modal = ({ onClose, onAddWord }) => {
 										{isCheckWord && (
 											<p className="mt-2 text-sm text-red-600 dark:text-red-500">
 												<span className="font-medium">
-													영어를 입력하세요.
+													영어를 올바르게 입력하세요.
 												</span>
 											</p>
 										)}
@@ -115,7 +114,7 @@ const Modal = ({ onClose, onAddWord }) => {
 										{isCheckMeaning && (
 											<p className="mt-2 text-sm text-red-600 dark:text-red-500">
 												<span className="font-medium">
-													한글을 입력하세요.
+													한글을 올바르게 입력하세요.
 												</span>
 											</p>
 										)}
