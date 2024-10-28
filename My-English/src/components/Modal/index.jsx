@@ -4,11 +4,9 @@ import useFocusOutValidation from '../../hooks/useValidation';
 const Modal = ({ onClose, onAddWord }) => {
 	// 품사구분
 	const [classficationValue, setClassfication] = useState('');
-	// custom hook 사용
-	// hook에 Word와 meaning의 정규식을 구분하여 넘겨서 리턴값 취득
-	const [wordRef, isCheckWord, handleWordFocusOut] = useFocusOutValidation();
-	// const [testRef, sdfs, sfs] = useFocusOutValidation();
 
+	// custom hook 사용
+	const [wordRef, isCheckWord, handleWordFocusOut] = useFocusOutValidation();
 	const [meaningRef, isCheckMeaning, handleMeaningFocusOut] =
 		useFocusOutValidation();
 
@@ -31,7 +29,6 @@ const Modal = ({ onClose, onAddWord }) => {
 		setClassfication('');
 		wordRef.current.value = '';
 		meaningRef.current.value = '';
-		// setInputValue({ word: '', meaning: '', classification: '' });
 	};
 
 	return (

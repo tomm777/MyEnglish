@@ -7,8 +7,6 @@ const useFocusOutValidation = () => {
 	const ref = useRef(null);
 
 	const handleCheckReset = () => {
-		console.log('초기화');
-
 		setIsCheck(false);
 	};
 

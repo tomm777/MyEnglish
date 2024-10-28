@@ -8,7 +8,6 @@ const WordsTable = ({ props }) => {
 	const [tableData, setTableData] = useState([]);
 	const [classification, setClassification] = useState('ALL');
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	// const [updatedData, setUpdatedData] = useState(tableData);
 	// Edit 모드의 classification
 	const [modifyClassification, setModifyClassification] = useState('');
 	// 유효성 검사 hook
@@ -23,7 +22,6 @@ const WordsTable = ({ props }) => {
 
 	useEffect(() => {
 		setTableData(data);
-		// setUpdatedData(data);
 	}, []);
 	// Edit모드에서 카테고리를 변경할 때 Edit모드 종료
 	useEffect(() => {
@@ -54,9 +52,6 @@ const WordsTable = ({ props }) => {
 	const handleEditChange = e => {
 		const { value } = e.target;
 		setModifyClassification(value);
-		// const newData = [...updatedData];
-		// newData[index] = { ...newData[index], [field]: value };
-		// setUpdatedData(newData);
 	};
 	// 수정 후 저장
 	const handleSave = () => {
@@ -86,9 +81,6 @@ const WordsTable = ({ props }) => {
 	};
 	// 수정 버튼 클릭 이벤트
 	const handleEdit = index => {
-		console.log('isCheckMeaning', isCheckMeaning);
-		console.log('isCheckWord', isCheckWord);
-
 		setModifyClassification(tableData[index].classification);
 		setEditIndex(index);
 		console.log(modifyClassification);
@@ -179,30 +171,16 @@ const WordsTable = ({ props }) => {
 								<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
 									{Number(index) + 1}
 								</td>
-								<td
-									className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500"
-									// style={{ minWidth: '16rem' }}
-								>
+								<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
 									{editIndex === data.index - 1 &&
 									props === 'edit' ? (
 										<>
 											<input
 												type="text"
-												// value={
-												// 	updatedData[data.index - 1]
-												// 		.word
-												// }
 												name="word"
 												ref={wordRef}
 												defaultValue={data.word}
 												onBlur={handleWordFocusOut}
-												// onChange={e =>
-												// 	handleEditChange(
-												// 		data.index - 1,
-												// 		'word',
-												// 		e.target.value,
-												// 	)
-												// }
 												className="border rounded p-1"
 											/>
 											{isCheckWord && (
@@ -210,7 +188,7 @@ const WordsTable = ({ props }) => {
 													<span className="font-medium">
 														영어를 올바르게
 														입력하세요.
-													</span>{' '}
+													</span>
 												</p>
 											)}
 										</>
@@ -228,17 +206,6 @@ const WordsTable = ({ props }) => {
 												defaultValue={data.meaning}
 												name="meaning"
 												onBlur={handleMeaningFocusOut}
-												// value={
-												// 	updatedData[data.index - 1]
-												// 		.meaning
-												// }
-												// onChange={e =>
-												// 	handleEditChange(
-												// 		data.index - 1,
-												// 		'meaning',
-												// 		e.target.value,
-												// 	)
-												// }
 												className="border rounded p-1"
 											/>
 											{isCheckMeaning && (
@@ -246,7 +213,7 @@ const WordsTable = ({ props }) => {
 													<span className="font-medium">
 														한글을 올바르게
 														입력하세요.
-													</span>{' '}
+													</span>
 												</p>
 											)}
 										</>
@@ -258,10 +225,6 @@ const WordsTable = ({ props }) => {
 									{editIndex === data.index - 1 &&
 									props === 'edit' ? (
 										<select
-											// value={
-											// 	updatedData[data.index - 1]
-											// 		.classification
-											// }
 											value={modifyClassification}
 											onChange={handleEditChange}
 											className="border rounded p-1"
@@ -287,14 +250,14 @@ const WordsTable = ({ props }) => {
 															data.index - 1,
 														)
 													}
-													className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+													className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
 												>
 													저장
 												</button>
 												<button
 													type="button"
 													onClick={handleCancel}
-													className="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
+													className="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
 												>
 													취소
 												</button>
@@ -308,7 +271,7 @@ const WordsTable = ({ props }) => {
 															data.index - 1,
 														)
 													}
-													className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+													className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2"
 												>
 													수정
 												</button>
@@ -319,7 +282,7 @@ const WordsTable = ({ props }) => {
 															data.index - 1,
 														)
 													}
-													className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
+													className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
 												>
 													삭제
 												</button>
