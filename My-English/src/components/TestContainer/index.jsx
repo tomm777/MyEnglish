@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-
+import useTimer from '../../hooks/useTimer';
 const buttons = [
 	{ index: 1, value: '동사', class: 'V' },
 	{ index: 2, value: '형용사', class: 'A' },
@@ -14,52 +14,57 @@ const TestContainer = ({
 	handleButtonClick,
 	handleOnTest,
 	phase,
-	onSubmit,
-	currentWordNum,
-	activeEnter,
+	// words,
 }) => {
-	const [progress, setProgress] = useState(100);
 	const inputRef = useRef('');
-	const timerRef = useRef(null);
+	const [currentNum, setcurrentNum] = useState(0);
+	const [words, _] = useState([
+		'word1',
+		'word2',
+		'word3',
+		'word4',
+		'word5',
+		'word6',
+		'word7',
+		'word8',
+		'word9',
+		'word10',
+	]); // 예시 단어 배열
+	const handleSubmit = e => {
+		console.log('실행');
+		console.log(currentNum);
+		setcurrentNum(prev => prev + 1);
+
+		stopTimer();
+		startTimer();
+	};
+	const { progress, startTimer, stopTimer } = useTimer(5000, handleSubmit); // 5초 타이머
 
 	useEffect(() => {
-		const duration = 5000;
-		const interval = 100; // 0.1초마다 업데이트
-		const steps = duration / interval;
-		const decrement = 100 / steps;
-
 		if (phase === 2) {
-			clearInterval(timerRef.current); // 이전 타이머 종료
-			timerRef.current = setInterval(() => {
-				setProgress(prev => {
-					if (prev <= 0) {
-						clearInterval(timerRef.current);
-						return 0;
-					}
-					return prev - decrement;
-				});
-			}, interval);
+			startTimer();
+		} else {
+			stopTimer();
 		}
-
-		return () => clearInterval(timerRef.current); // 컴포넌트 언마운트 시 타이머 종료
-	}, [phase]);
-
+	}, [phase, stopTimer, startTimer]);
 	useEffect(() => {
-		if (currentWordNum === 10) {
-			setProgress(0); // 진행률을 0으로 설정
-			clearInterval(timerRef.current); // 타이머 종료
+		if (currentNum === 10) {
+			stopTimer();
 		}
-	}, [currentWordNum]);
+	}, [currentNum, stopTimer]);
 
-	const handleSubmit = () => {
-		setProgress(100); // 타이머 초기화
-		onSubmit(); // 부모의 onSubmit 호출
-		inputRef.current.value = '';
+	// 엔터 프레스
+	const activeEnter = e => {
+		if (e.key === 'Enter') {
+			console.log(e.target.value);
+			handleSubmit();
+			e.target.value = '';
+		}
 	};
 
 	return (
 		<>
-			{phase === 1 ? (
+			{phase === 1 && (
 				<>
 					<div className="p-5">
 						<p className="text-gray-500 whitespace-nowrap dark:text-gray-400">
@@ -76,7 +81,7 @@ const TestContainer = ({
 								key={item.index}
 								onClick={() => handleButtonClick(item.index)}
 								className={`text-gray-900 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 
-                        ${activeButton.includes(item.index) ? 'text-white bg-blue-700' : 'bg-white border border-gray-300 hover:bg-gray-100'}`}
+								${activeButton.includes(item.index) ? 'text-white bg-blue-700' : 'bg-white border border-gray-300 hover:bg-gray-100'}`}
 							>
 								{item.value}
 							</button>
@@ -99,7 +104,8 @@ const TestContainer = ({
 						</button>
 					</div>
 				</>
-			) : (
+			)}
+			{phase === 2 && currentNum <= 9 && (
 				<div className="p-6 mt-5 border relative text-center">
 					<div
 						className="h-1 bg-green-500 absolute top-0 left-0"
@@ -111,7 +117,8 @@ const TestContainer = ({
 					></div>
 					<div className="mb-5">
 						<button className="py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-							???
+							{/* {data.button.value} */}
+							{words[currentNum]}
 						</button>
 					</div>
 					<div style={{ height: '100px' }} className="text-center">
@@ -143,8 +150,43 @@ const TestContainer = ({
 					</div>
 				</div>
 			)}
+			{currentNum === 10 && <div>시험이 종료되었습니다.</div>}
 		</>
 	);
 };
 
 export default TestContainer;
+
+// const timerRef = useRef(null);
+// useEffect(() => {
+// 	const duration = 5000;
+// 	const interval = 100; // 0.1초마다 업데이트
+// 	const steps = duration / interval;
+// 	const decrement = 100 / steps;
+
+// 	if (phase === 2) {
+// 		clearInterval(timerRef.current); // 이전 타이머 종료
+// 		timerRef.current = setInterval(() => {
+// 			setProgress(prev => {
+// 				if (prev <= 0) {
+// 					clearInterval(timerRef.current);
+// 					handleSubmit();
+
+// 					return 0;
+// 				}
+// 				return prev - decrement;
+// 			});
+// 		}, interval);
+// 	}
+
+// 	return () => {
+// 		clearInterval(timerRef.current); // 컴포넌트 언마운트 시 타이머 종료
+// 	};
+// }, [phase]);
+
+// useEffect(() => {
+// 	if (currentNum === 10) {
+// 		setProgress(0); // 진행률을 0으로 설정
+// 		clearInterval(timerRef.current); // 타이머 종료
+// 	}
+// }, [currentNum]);
