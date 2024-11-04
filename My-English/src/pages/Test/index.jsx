@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import TestContainer from '../../components/TestContainer';
-import useTimer from '../../hooks/useTimer';
 
 const Test = () => {
 	const [activeButton, setActiveButton] = useState([]);
@@ -51,13 +50,16 @@ const Test = () => {
 			}
 		});
 	};
+	const handleResult = () => {
+		setPhase(3);
+	};
 
 	return (
 		<>
 			<div className="w-[40rem] mx-auto mt-12 p-6 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
 				<div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
 					<h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-						단어 시험
+						{phase === 3 ? '단어 시험 결과' : '단어 시험'}
 					</h3>
 				</div>
 				<TestContainer
@@ -71,6 +73,7 @@ const Test = () => {
 					handleOnTest={handleOnTest}
 					onSubmit={onSubmit}
 					words={words}
+					handleResult={handleResult}
 				/>
 			</div>
 		</>

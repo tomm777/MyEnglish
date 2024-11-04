@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import useTimer from '../../hooks/useTimer';
+import WordsTable from '../Layout/WordsTable';
+import ResultTable from '../ResultTable';
 const buttons = [
 	{ index: 1, value: '동사', class: 'V' },
 	{ index: 2, value: '형용사', class: 'A' },
@@ -14,34 +16,40 @@ const TestContainer = ({
 	handleButtonClick,
 	handleOnTest,
 	phase,
+	handleResult,
 	// words,
 }) => {
 	const inputRef = useRef('');
 	const [currentNum, setcurrentNum] = useState(0);
 	const [words, _] = useState([
-		'word1',
-		'word2',
-		'word3',
-		'word4',
-		'word5',
-		'word6',
-		'word7',
-		'word8',
-		'word9',
-		'word10',
-	]); // 예시 단어 배열
-	const handleSubmit = e => {
-		console.log('실행');
-		console.log(currentNum);
+		{ index: 1, word: 'word1', meaning: '뜻1', classification: '명사' },
+		{ index: 2, word: 'word2', meaning: '뜻2', classification: '동사' },
+		{ index: 3, word: 'word3', meaning: '뜻3', classification: '형용사' },
+		{ index: 4, word: 'word4', meaning: '뜻4', classification: '부사' },
+		{ index: 5, word: 'word5', meaning: '뜻5', classification: '숙어' },
+		{ index: 6, word: 'word6', meaning: '뜻6', classification: '명사' },
+		{ index: 7, word: 'word7', meaning: '뜻7', classification: '동사' },
+		{ index: 8, word: 'word8', meaning: '뜻8', classification: '형용사' },
+		{ index: 9, word: 'word9', meaning: '뜻9', classification: '부사' },
+		{ index: 10, word: 'word10', meaning: '뜻10', classification: '숙어' },
+	]);
+	const [wordsMeaning, setWordsMeaning] = useState([]);
+	const handleSubmit = () => {
+		const inputValue = inputRef.current.value;
+		setWordsMeaning(prev => [...prev, inputValue]);
+
+		console.log(wordsMeaning);
+		inputRef.current.value = '';
 		setcurrentNum(prev => prev + 1);
 
 		stopTimer();
 		startTimer();
 	};
-	const { progress, startTimer, stopTimer } = useTimer(5000, handleSubmit); // 5초 타이머
+	const { progress, startTimer, stopTimer } = useTimer(3000, handleSubmit); // 5초 타이머
 
 	useEffect(() => {
 		if (phase === 2) {
+			inputRef.current.focus();
 			startTimer();
 		} else {
 			stopTimer();
@@ -56,11 +64,15 @@ const TestContainer = ({
 	// 엔터 프레스
 	const activeEnter = e => {
 		if (e.key === 'Enter') {
-			console.log(e.target.value);
 			handleSubmit();
 			e.target.value = '';
 		}
 	};
+	// 결과 페이지에 정보 전달
+	// const handleMoveResult = () => {
+	// 	navigate('/test/result', { state: { wordsMeaning } });
+	// 	console.log('Navigating...'); // 이 로그가 찍혀야 합니다.
+	// };
 
 	return (
 		<>
@@ -87,7 +99,7 @@ const TestContainer = ({
 							</button>
 						))}
 						{isCheck && (
-							<p className="mt-2 text-sm text-red-600 dark:text-red-500">
+							<p className="mt-2 text-sm text-red-600 dark:text-red-500 absolute">
 								<span className="font-medium">
 									품사를 선택해주세요
 								</span>
@@ -118,7 +130,7 @@ const TestContainer = ({
 					<div className="mb-5">
 						<button className="py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
 							{/* {data.button.value} */}
-							{words[currentNum]}
+							{words[currentNum].word}
 						</button>
 					</div>
 					<div style={{ height: '100px' }} className="text-center">
@@ -139,7 +151,7 @@ const TestContainer = ({
 							required
 						/>
 					</div>
-					<div className="text-center">
+					<div className="text-center mt-5">
 						<button
 							type="button"
 							className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
@@ -150,7 +162,30 @@ const TestContainer = ({
 					</div>
 				</div>
 			)}
-			{currentNum === 10 && <div>시험이 종료되었습니다.</div>}
+			{phase === 2 && currentNum === 10 && (
+				<div className="text-center mt-5">
+					<p className="text-gray-500 whitespace-nowrap dark:text-gray-400">
+						시험이 종료되었습니다.
+					</p>
+					<button
+						className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-5"
+						onClick={handleResult}
+					>
+						결과 보러가기
+					</button>
+				</div>
+			)}
+			{phase === 3 && (
+				<div>
+					<ResultTable
+						correctAnswers={words}
+						myAnswers={wordsMeaning}
+					/>
+					{/* {wordsMeaning.map((word, index) => (
+						<li key={index}>{word}</li>
+					))} */}
+				</div>
+			)}
 		</>
 	);
 };
