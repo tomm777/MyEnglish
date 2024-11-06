@@ -53,7 +53,23 @@ const Test = () => {
 	const handleResult = () => {
 		setPhase(3);
 	};
-
+	// const loadData = async () => {
+	// 	setIsLoading(true); // 로딩 시작
+	// 	try {
+	// 		const q = query(
+	// 			collection(db, 'words'),
+	// 			where('classification', '==', classificationValue), // 선택한 classification에 따라 필터링
+	// 			orderBy('createdAt', 'desc') // 생성일 기준으로 정렬
+	// 		);
+	// 		const querySnapshot = await getDocs(q);
+	// 		const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+	// 		setTableData(data);
+	// 	} catch (err) {
+	// 		setError("데이터를 불러오는 중 오류가 발생했습니다: " + err.message);
+	// 	} finally {
+	// 		setIsLoading(false); // 로딩 종료
+	// 	}
+	// };
 	return (
 		<>
 			<div className="w-[40rem] mx-auto mt-12 p-6 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">

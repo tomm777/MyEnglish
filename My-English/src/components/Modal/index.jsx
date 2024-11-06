@@ -21,7 +21,7 @@ const Modal = ({ onClose, onAddWord }) => {
 			return;
 		}
 		const newWords = {
-			word: wordRef.current.value,
+			word: capitalizeWord(wordRef.current.value),
 			meaning: meaningRef.current.value,
 			classification: classficationValue,
 		};
@@ -29,6 +29,12 @@ const Modal = ({ onClose, onAddWord }) => {
 		setClassfication('');
 		wordRef.current.value = '';
 		meaningRef.current.value = '';
+	};
+	const capitalizeWord = str => {
+		const newStr = str.trim();
+		console.log(newStr);
+
+		return newStr.charAt(0).toUpperCase() + newStr.slice(1);
 	};
 
 	return (
