@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-// import data from '../../../../public/Data/mockData.json';
 import Modal from '../../Modal';
 import useFocusOutValidation from '../../../hooks/useValidation';
 import {
@@ -9,7 +8,7 @@ import {
 	doc,
 	getDocs,
 	orderBy,
-	Timestamp,
+	query,
 	updateDoc,
 } from '@firebase/firestore';
 import { db } from '../../../firebase/firebase';
@@ -43,13 +42,16 @@ const WordsTable = ({ props }) => {
 		setIsLoading(true);
 		try {
 			const getData = await getDocs(
-				collection(db, 'words'),
-				orderBy('createAt', 'desc'),
+				query(collection(db, 'words'), orderBy('createdAt', 'asc')),
 			);
 			const data = getData.docs.map(doc => ({
 				id: doc.id,
 				...doc.data(),
 			}));
+			console.log(
+				data.map(item => ({ id: item.id, createdAt: item.createdAt })),
+			);
+
 			setTableData(data);
 		} catch (err) {
 			throw new Error(
@@ -115,10 +117,8 @@ const WordsTable = ({ props }) => {
 	};
 	// 수정 버튼 클릭 이벤트
 	const handleEdit = index => {
-		console.log(tableData[index].classification);
 		setModifyClassification(tableData[index].classification);
 		setEditIndex(index);
-		console.log(modifyClassification);
 	};
 	// 삭제 버튼 클릭 이벤트
 	const handleRemove = async id => {
@@ -127,7 +127,8 @@ const WordsTable = ({ props }) => {
 		try {
 			const docRef = doc(db, 'words', id);
 			await deleteDoc(docRef);
-			loadData();
+			// loadData();
+			setTableData(prevData => prevData.filter(item => item.id !== id));
 		} catch (error) {
 			console.log(error);
 		}
@@ -144,7 +145,7 @@ const WordsTable = ({ props }) => {
 		try {
 			const addDateWord = {
 				...newWord,
-				createdAt: Timestamp.now(),
+				createdAt: Date.now(),
 			};
 			await addDoc(collection(db, 'words'), addDateWord);
 			loadData(); // 데이터 재로드
@@ -168,9 +169,14 @@ const WordsTable = ({ props }) => {
 			{isLoading ? (
 				<Loading />
 			) : (
-				<div style={{ maxWidth: '90rem', margin: '0 auto' }}>
+				<div
+					style={{
+						maxWidth: '90rem',
+						margin: '0 auto',
+					}}
+				>
 					{props === 'edit' ? (
-						<div className="flex justify-end">
+						<div className="flex justify-end ">
 							<button
 								onClick={openModal}
 								type="button"
@@ -258,7 +264,7 @@ const WordsTable = ({ props }) => {
 													ref={wordRef}
 													defaultValue={data.word}
 													onBlur={handleWordFocusOut}
-													className="border rounded p-1"
+													className="border rounded p-0"
 												/>
 												{isCheckWord && (
 													<p className="mt-2 text-sm text-red-600 dark:text-red-500">
@@ -285,7 +291,7 @@ const WordsTable = ({ props }) => {
 													onBlur={
 														handleMeaningFocusOut
 													}
-													className="border rounded p-1"
+													className="border rounded p-0"
 												/>
 												{isCheckMeaning && (
 													<p className="mt-2 text-sm text-red-600 dark:text-red-500">
@@ -306,7 +312,7 @@ const WordsTable = ({ props }) => {
 											<select
 												value={modifyClassification}
 												onChange={handleEditChange}
-												className="border rounded p-1"
+												className="border rounded p-0"
 											>
 												<option value="V">동사</option>
 												<option value="A">

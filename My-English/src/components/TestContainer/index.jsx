@@ -2,13 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import useTimer from '../../hooks/useTimer';
 import WordsTable from '../Layout/WordsTable';
 import ResultTable from '../ResultTable';
-const buttons = [
-	{ index: 1, value: '동사', class: 'V' },
-	{ index: 2, value: '형용사', class: 'A' },
-	{ index: 3, value: '부사', class: 'AD' },
-	{ index: 4, value: '명사', class: 'N' },
-	{ index: 5, value: '숙어', class: 'I' },
-];
 
 const TestContainer = ({
 	activeButton,
@@ -17,35 +10,22 @@ const TestContainer = ({
 	handleOnTest,
 	phase,
 	handleResult,
-	// words,
+	buttons,
+	words,
 }) => {
 	const inputRef = useRef('');
 	const [currentNum, setcurrentNum] = useState(0);
-	const [words, _] = useState([
-		{ index: 1, word: 'word1', meaning: '뜻1', classification: '명사' },
-		{ index: 2, word: 'word2', meaning: '뜻2', classification: '동사' },
-		{ index: 3, word: 'word3', meaning: '뜻3', classification: '형용사' },
-		{ index: 4, word: 'word4', meaning: '뜻4', classification: '부사' },
-		{ index: 5, word: 'word5', meaning: '뜻5', classification: '숙어' },
-		{ index: 6, word: 'word6', meaning: '뜻6', classification: '명사' },
-		{ index: 7, word: 'word7', meaning: '뜻7', classification: '동사' },
-		{ index: 8, word: 'word8', meaning: '뜻8', classification: '형용사' },
-		{ index: 9, word: 'word9', meaning: '뜻9', classification: '부사' },
-		{ index: 10, word: 'word10', meaning: '뜻10', classification: '숙어' },
-	]);
 	const [wordsMeaning, setWordsMeaning] = useState([]);
 	const handleSubmit = () => {
 		const inputValue = inputRef.current.value;
 		setWordsMeaning(prev => [...prev, inputValue]);
-
-		console.log(wordsMeaning);
 		inputRef.current.value = '';
 		setcurrentNum(prev => prev + 1);
 
 		stopTimer();
 		startTimer();
 	};
-	const { progress, startTimer, stopTimer } = useTimer(3000, handleSubmit); // 5초 타이머
+	const { progress, startTimer, stopTimer } = useTimer(5000, handleSubmit); // 5초 타이머
 
 	useEffect(() => {
 		if (phase === 2) {
@@ -80,8 +60,7 @@ const TestContainer = ({
 				<>
 					<div className="p-5">
 						<p className="text-gray-500 whitespace-nowrap dark:text-gray-400">
-							본인이 추가한 영단어 중 10개의 단어가 무작위로
-							출제됩니다.
+							추가된 영단어 중 10개의 단어가 무작위로 출제됩니다.
 						</p>
 					</div>
 					<h3 className="text-xl font-semibold text-gray-900 dark:text-white p-5">
@@ -130,7 +109,7 @@ const TestContainer = ({
 					<div className="mb-5">
 						<button className="py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
 							{/* {data.button.value} */}
-							{words[currentNum].word}
+							{words[currentNum]?.word}
 						</button>
 					</div>
 					<div style={{ height: '100px' }} className="text-center">

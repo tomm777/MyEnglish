@@ -1,9 +1,7 @@
 const Loading = () => {
 	return (
-		<div className="flex items-center justify-center min-h-screen">
-			<div role="status" style={{ marginTop: '-300px' }}>
-				{' '}
-				{/* 300px 위로 이동 */}
+		<div className="fixed inset-0 flex items-center justify-center ">
+			<div role="status">
 				<svg
 					aria-hidden="true"
 					className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
