@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Modal from '../../Modal';
 import useFocusOutValidation from '../../../hooks/useValidation';
 import {
@@ -7,8 +7,11 @@ import {
 	deleteDoc,
 	doc,
 	getDocs,
+	limit,
 	orderBy,
 	query,
+	startAfter,
+	startAt,
 	updateDoc,
 } from '@firebase/firestore';
 import { db } from '../../../firebase/firebase';
@@ -20,6 +23,12 @@ const WordsTable = ({ props }) => {
 	const [classification, setClassification] = useState('ALL');
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
+	const [page, setPage] = useState(1);
+	const lastElementRef = useRef();
+	const observer = useRef();
+	const [totalLength, setTotalLength] = useState(0);
+	const [currentLength, setCurrentLength] = useState(0);
+	// let lastVisible = null;
 	// Edit 모드의 classification
 	const [modifyClassification, setModifyClassification] = useState('');
 	// 유효성 검사 hook
@@ -36,34 +45,98 @@ const WordsTable = ({ props }) => {
 	useEffect(() => {
 		setEditIndex(null);
 	}, [classification]);
+	useEffect(() => {
+		console.log('페이지바뀔때마다');
+
+		loadData();
+	}, [page]);
+	useEffect(() => {
+		console.log('데이터바뀔때마다');
+		observer.current = new IntersectionObserver(observerCallback);
+		// const observer = new IntersectionObserver(observerCallback);
+		if (lastElementRef.current) {
+			observer.current.observe(lastElementRef.current);
+		}
+
+		return () => {
+			if (lastElementRef.current) {
+				// observer.unobserve(lastElementRef.current);
+				observer.current.disconnect();
+			}
+		};
+	}, [lastElementRef, tableData, page]);
+
+	const observerCallback = entries => {
+		if (totalLength <= currentLength) {
+			console.log('모든 데이터가 로드되었습니다.');
+			setIsLoading(false);
+			return;
+		}
+		if (entries[0].isIntersecting && !isLoading) {
+			setIsLoading(true);
+			setPage(prev => prev + 1);
+			console.log('끝');
+		}
+	};
 
 	// 데이터 로드
 	const loadData = async () => {
 		setIsLoading(true);
 		try {
-			const getData = await getDocs(
-				query(collection(db, 'words'), orderBy('createdAt', 'asc')),
-			);
-			const data = getData.docs.map(doc => ({
-				id: doc.id,
-				...doc.data(),
-			}));
-			console.log(
-				data.map(item => ({ id: item.id, createdAt: item.createdAt })),
-			);
+			const totalSnapshot = await getDocs(query(collection(db, 'words')));
+			setTotalLength(totalSnapshot.docs.length);
 
-			setTableData(data);
+			const q = query(
+				collection(db, 'words'),
+				orderBy('createdAt', 'asc'),
+				limit(20),
+			);
+			console.log(page);
+
+			// 첫 페이지 데이터 로드
+			if (page === 1) {
+				const getData = await getDocs(q);
+				const data = getData.docs.map(doc => ({
+					id: doc.id,
+					...doc.data(),
+				}));
+				setCurrentLength(data.length);
+				setTableData(data);
+			} else {
+				// 두 번째 페이지 이상에서 데이터 로드
+				const documentSnapshots = await getDocs(q);
+				const lastVisible =
+					documentSnapshots.docs[documentSnapshots.docs.length - 1];
+
+				// 다음 페이지 데이터 로드
+				const next = await getDocs(
+					query(
+						collection(db, 'words'),
+						orderBy('createdAt', 'asc'),
+						startAfter(lastVisible),
+						limit(20),
+					),
+				);
+
+				const nextData = next.docs.map(doc => ({
+					id: doc.id,
+					...doc.data(),
+				}));
+				setTableData(prevData => [...prevData, ...nextData]); // 기존 데이터와 병합
+				// 현재 데이터 개수 업데이트
+				setCurrentLength(prev => prev + nextData.length);
+			}
+			// 현재 데이터 개수
 		} catch (err) {
-			throw new Error(
-				'데이터를 불러오는 중 오류가 발생했습니다:,' + err.message,
+			console.error(
+				'데이터를 불러오는 중 오류가 발생했습니다:',
+				err.message,
 			);
 		} finally {
 			setIsLoading(false);
 		}
 	};
-	useEffect(() => {
-		loadData();
-	}, []);
+
 	// Table Data에서 select 박스 옵션 변경 핸들러
 	// 필터링된 데이터 계산
 	const filteredData = useMemo(() => {
@@ -160,15 +233,13 @@ const WordsTable = ({ props }) => {
 		// // setUpdatedData(prevData => [...prevData, newWord]);
 		// setIsModalOpen(false);
 	};
-
 	return (
 		<>
 			{isModalOpen && (
 				<Modal onClose={closeModal} onAddWord={handleAddWord} />
 			)}
-			{isLoading ? (
-				<Loading />
-			) : (
+			{isLoading && <Loading />} {/* 로딩 중일 때 로딩 스피너 표시 */}
+			{!isLoading && (
 				<div
 					style={{
 						maxWidth: '90rem',
@@ -379,6 +450,9 @@ const WordsTable = ({ props }) => {
 									)}
 								</tr>
 							))}
+							<tr ref={lastElementRef}>
+								<td colSpan="4" className="text-center"></td>
+							</tr>
 						</tbody>
 					</table>
 				</div>
