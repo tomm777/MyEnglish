@@ -8,6 +8,7 @@ import {
 	doc,
 	getDocs,
 	limit,
+	onSnapshot,
 	orderBy,
 	query,
 	startAfter,
@@ -23,13 +24,15 @@ const WordsTable = ({ props }) => {
 	const [classification, setClassification] = useState('ALL');
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
-	const [page, setPage] = useState(1);
+	// const [page, setPage] = useState(1);
 	const lastElementRef = useRef();
-	const observer = useRef();
+	const observerRef = useRef();
 	const [totalLength, setTotalLength] = useState(0);
 	const [currentLength, setCurrentLength] = useState(0);
-	// let lastVisible = null;
+	// 무한스크롤의 호출을 위한 배열의 요소
+	const [lastVisible, setLastVisible] = useState(null);
 	// Edit 모드의 classification
+	const [isLoadingMore, setIsLoadingMore] = useState(false); // 추가 로딩 상태
 	const [modifyClassification, setModifyClassification] = useState('');
 	// 유효성 검사 hook
 	const [wordRef, isCheckWord, handleWordFocusOut, handleResetWordCheck] =
@@ -46,94 +49,116 @@ const WordsTable = ({ props }) => {
 		setEditIndex(null);
 	}, [classification]);
 	useEffect(() => {
-		console.log('페이지바뀔때마다');
-
-		loadData();
-	}, [page]);
-	useEffect(() => {
-		console.log('데이터바뀔때마다');
-		observer.current = new IntersectionObserver(observerCallback);
-		// const observer = new IntersectionObserver(observerCallback);
+		observerRef.current = new IntersectionObserver(observerCallback);
 		if (lastElementRef.current) {
-			observer.current.observe(lastElementRef.current);
+			observerRef.current.observe(lastElementRef.current);
 		}
-
 		return () => {
 			if (lastElementRef.current) {
-				// observer.unobserve(lastElementRef.current);
-				observer.current.disconnect();
+				// observerRef.unobserve(lastElementRef.current);
+				observerRef.current.disconnect();
 			}
 		};
-	}, [lastElementRef, tableData, page]);
+	}, [lastElementRef.current, tableData]);
+	useEffect(() => {
+		setIsLoading(true);
+		const q = query(
+			collection(db, 'words'),
+			orderBy('createdAt', 'asc'),
+			limit(20),
+		);
 
+		// Firestore 실시간 업데이트
+		const unsubscribe = onSnapshot(
+			q,
+			snapshot => {
+				const updatedData = snapshot.docs.map(doc => ({
+					id: doc.id,
+					...doc.data(),
+				}));
+				setTableData(updatedData);
+				// if (snapshot.size <= 20) {
+				// 	setTotalLength(snapshot.size); // 전체 데이터 개수 업데이트
+				// }
+
+				setCurrentLength(updatedData.length); // 현재 데이터 개수 업데이트
+
+				if (snapshot.docs.length > 0) {
+					setLastVisible(snapshot.docs[snapshot.docs.length - 1]); // 마지막 문서 저장
+				}
+			},
+			error => {
+				console.error('Snapshot error:', error);
+			},
+			fetchTotalLength(),
+		);
+		setIsLoading(false);
+		// 컴포넌트 언마운트 시 리스너 해제
+		return () => unsubscribe();
+	}, []);
+	const fetchTotalLength = async () => {
+		// 전체 데이터 개수
+		const totalSnapshot = await getDocs(collection(db, 'words'));
+		setTotalLength(totalSnapshot.docs.length); // 전체 데이터 개수 업데이트
+	};
+	// observe 동작
 	const observerCallback = entries => {
+		console.log(totalLength, 'totalLength', currentLength, 'currentLength');
 		if (totalLength <= currentLength) {
 			console.log('모든 데이터가 로드되었습니다.');
-			setIsLoading(false);
+			// setIsLoading(false);
 			return;
 		}
-		if (entries[0].isIntersecting && !isLoading) {
-			setIsLoading(true);
-			setPage(prev => prev + 1);
-			console.log('끝');
+		if (entries[0].isIntersecting && !isLoadingMore) {
+			loadData(); // 다음 데이터 로드
 		}
 	};
 
-	// 데이터 로드
+	// 추가 데이터 로드
 	const loadData = async () => {
-		setIsLoading(true);
-		try {
-			const totalSnapshot = await getDocs(query(collection(db, 'words')));
-			setTotalLength(totalSnapshot.docs.length);
+		console.log(lastVisible);
 
-			const q = query(
+		if (!lastVisible) return;
+		setIsLoadingMore(true);
+		console.log('API 호출');
+
+		// setIsLoading(true);
+		try {
+			// 기존 20개의 초기 데이터 이 후의 처리
+			const nextQuery = query(
 				collection(db, 'words'),
 				orderBy('createdAt', 'asc'),
+				startAfter(lastVisible),
 				limit(20),
 			);
-			console.log(page);
 
-			// 첫 페이지 데이터 로드
-			if (page === 1) {
-				const getData = await getDocs(q);
-				const data = getData.docs.map(doc => ({
-					id: doc.id,
-					...doc.data(),
-				}));
-				setCurrentLength(data.length);
-				setTableData(data);
-			} else {
-				// 두 번째 페이지 이상에서 데이터 로드
-				const documentSnapshots = await getDocs(q);
-				const lastVisible =
-					documentSnapshots.docs[documentSnapshots.docs.length - 1];
+			const nextData = await getDocs(nextQuery);
+			const nextDocs = nextData.docs.map(doc => ({
+				id: doc.id,
+				...doc.data(),
+			}));
+			// 다음 호출을 위한 마지막 요소
+			setLastVisible(nextData.docs[nextData.docs.length - 1]);
 
-				// 다음 페이지 데이터 로드
-				const next = await getDocs(
-					query(
-						collection(db, 'words'),
-						orderBy('createdAt', 'asc'),
-						startAfter(lastVisible),
-						limit(20),
-					),
-				);
+			if (nextDocs.length > 0) {
+				setTableData(prevData => {
+					const existingIds = new Set(prevData.map(item => item.id));
 
-				const nextData = next.docs.map(doc => ({
-					id: doc.id,
-					...doc.data(),
-				}));
-				setTableData(prevData => [...prevData, ...nextData]); // 기존 데이터와 병합
-				// 현재 데이터 개수 업데이트
-				setCurrentLength(prev => prev + nextData.length);
+					const uniqueNextDocs = nextDocs.filter(
+						item => !existingIds.has(item.id),
+					);
+
+					return [...prevData, ...uniqueNextDocs]; // 기존 데이터와 병합
+				});
 			}
-			// 현재 데이터 개수
+			setCurrentLength(prev => prev + nextDocs.length);
 		} catch (err) {
 			console.error(
 				'데이터를 불러오는 중 오류가 발생했습니다:',
 				err.message,
 			);
 		} finally {
-			setIsLoading(false);
+			setIsLoadingMore(false);
 		}
 	};
 
@@ -174,8 +199,14 @@ const WordsTable = ({ props }) => {
 			classification: modifyClassification,
 		};
 		await updateDoc(docRef, newData);
+		if (currentLength >= 20) {
+			setTableData(prevData =>
+				prevData.map(item =>
+					item.id === id ? { ...item, ...newData } : item,
+				),
+			);
+		}
 		setEditIndex(null);
-		loadData();
 	};
 	// 수정 취소
 	const handleCancel = () => {
@@ -195,12 +226,14 @@ const WordsTable = ({ props }) => {
 	};
 	// 삭제 버튼 클릭 이벤트
 	const handleRemove = async id => {
-		console.log(id);
-
 		try {
 			const docRef = doc(db, 'words', id);
+
 			await deleteDoc(docRef);
-			// loadData();
+			if (currentLength > 20) {
+				setCurrentLength(prev => (prev > 0 ? prev - 1 : 0));
+			}
+			setTotalLength(prev => (prev > 0 ? prev - 1 : 0));
 			setTableData(prevData => prevData.filter(item => item.id !== id));
 		} catch (error) {
 			console.log(error);
@@ -220,25 +253,32 @@ const WordsTable = ({ props }) => {
 				...newWord,
 				createdAt: Date.now(),
 			};
-			await addDoc(collection(db, 'words'), addDateWord);
-			loadData(); // 데이터 재로드
+			const docRef = await addDoc(collection(db, 'words'), addDateWord);
+			// 초기 데이터는 firebase에서 실시간으로 업데이트 하기때문에 추후의 데이터는 별도로 관리
+			if (currentLength >= 20) {
+				setTableData(prevData => [
+					...prevData,
+					{ id: docRef.id, ...addDateWord }, // Firestore에서 생성된 ID를 포함
+				]);
+			}
+			if (currentLength >= 20) {
+				setCurrentLength(prev => prev + 1);
+			}
+			setTotalLength(prev => prev + 1);
 			setIsModalOpen(false); // 모달 닫기
 		} catch (err) {
 			console.log(err);
 
-			throw new Error('err', err);
+			throw new Error('err', err.message);
 		}
-
-		// setTableData(prevData => [...prevData, newWord]);
-		// // setUpdatedData(prevData => [...prevData, newWord]);
-		// setIsModalOpen(false);
 	};
 	return (
 		<>
 			{isModalOpen && (
 				<Modal onClose={closeModal} onAddWord={handleAddWord} />
 			)}
-			{isLoading && <Loading />} {/* 로딩 중일 때 로딩 스피너 표시 */}
+			{isLoading || (isLoadingMore && <Loading />)}
+			{/* 로딩 중일 때 로딩 스피너 표시 */}
 			{!isLoading && (
 				<div
 					style={{
@@ -461,3 +501,56 @@ const WordsTable = ({ props }) => {
 	);
 };
 export default WordsTable;
+// 모든 단어개수
+
+// 첫 페이지 데이터 로드
+// if (page === 1) {
+// 	const q = query(
+// 		collection(db, 'words'),
+// 		orderBy('createdAt', 'asc'),
+// 		limit(20),
+// 	);
+// 	const getData = await getDocs(q);
+// 	const data = getData.docs.map(doc => ({
+// 		id: doc.id,
+// 		...doc.data(),
+// 	}));
+// 	setCurrentLength(data.length);
+// 	setTableData(data);
+// 	setLastVisible(getData.docs[getData.docs.length - 1]); // 마지막 문서 저장
+// } else {
+// 	const q = query(
+// 		collection(db, 'words'),
+// 		orderBy('createdAt', 'asc'),
+// 		limit(20),
+// 	);
+
+// 	// 두 번째 페이지 이상에서 데이터 로드
+// 	const documentSnapshots = await getDocs(q);
+// 	console.log(documentSnapshots);
+
+// 	const lastVisible =
+// 		documentSnapshots.docs[documentSnapshots.docs.length - 1];
+
+// 	// 다음 페이지 데이터 로드
+// 	const nextData = await getDocs(
+// 		query(
+// 			collection(db, 'words'),
+// 			orderBy('createdAt', 'asc'),
+// 			startAfter(lastVisible),
+// 			limit(20),
+// 		),
+// 	);
+
+// 	const next = nextData.docs.map(doc => ({
+// 		id: doc.id,
+// 		...doc.data(),
+// 	}));
+// 	console.log(next);
+
+// 	if (next.length > 0) {
+// 		setTableData(prevData => [...prevData, ...next]); // 기존 데이터와 병합
+// 		setLastVisible(nextData.docs[nextData.docs.length - 1]); // 새로운 마지막 문서 저장
+// 		setCurrentLength(prev => prev + next.length);
+// 	}
+// }

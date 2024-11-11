@@ -3,9 +3,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 const useTimer = (duration, onTimeOut) => {
 	const [progress, setProgress] = useState(100);
 	const timerRef = useRef(null);
-	// 타이머 시작
-	// console.log('TIMER');
-
 	const startTimer = useCallback(() => {
 		const interval = 100; // 0.1초마다 업데이트
 		const steps = duration / interval;
