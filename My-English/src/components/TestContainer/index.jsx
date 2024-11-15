@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import useTimer from '../../hooks/useTimer';
-import WordsTable from '../Layout/WordsTable';
+// import WordsTable from '../Layout/WordsTable';
 import ResultTable from '../ResultTable';
 
 const TestContainer = ({
@@ -17,7 +17,8 @@ const TestContainer = ({
 	const [currentNum, setcurrentNum] = useState(0);
 	const [wordsMeaning, setWordsMeaning] = useState([]);
 	const handleSubmit = () => {
-		const inputValue = inputRef.current.value;
+		const inputValue = inputRef.current.value.replace(/\s+/g, '');
+		console.log(inputValue);
 		setWordsMeaning(prev => [...prev, inputValue]);
 		inputRef.current.value = '';
 		setcurrentNum(prev => prev + 1);
@@ -48,11 +49,6 @@ const TestContainer = ({
 			e.target.value = '';
 		}
 	};
-	// 결과 페이지에 정보 전달
-	// const handleMoveResult = () => {
-	// 	navigate('/test/result', { state: { wordsMeaning } });
-	// 	console.log('Navigating...'); // 이 로그가 찍혀야 합니다.
-	// };
 
 	return (
 		<>
@@ -160,9 +156,20 @@ const TestContainer = ({
 						correctAnswers={words}
 						myAnswers={wordsMeaning}
 					/>
-					{/* {wordsMeaning.map((word, index) => (
-						<li key={index}>{word}</li>
-					))} */}
+					<div className="text-center mt-10">
+						<button
+							type="button"
+							class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+						>
+							재도전
+						</button>
+						<button
+							type="button"
+							class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
+						>
+							홈으로
+						</button>
+					</div>
 				</div>
 			)}
 		</>

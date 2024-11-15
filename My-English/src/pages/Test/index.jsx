@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { act, useEffect, useRef, useState } from 'react';
 import TestContainer from '../../components/TestContainer';
 import { collection, getDocs, query, where } from '@firebase/firestore';
 import { db } from '../../firebase/firebase';
@@ -15,14 +15,17 @@ const Test = () => {
 	const [isCheck, setIsCheck] = useState(false);
 	const [phase, setPhase] = useState(1);
 	const [words, setWords] = useState([]);
-	const handleOnTest = () => {
-		console.log(activeButton[1]);
-		const arr = [];
+	const handleOnTest = async () => {
 		if (activeButton.length < 1) {
 			setIsCheck(true);
 			return;
 		}
-		if (getRandomWords(words, 10).length < 10) {
+		const arr = activeButton.map(item => buttons[item - 1].class);
+
+		const count = await getWordCount(arr);
+		console.log(count);
+
+		if (count < 10) {
 			alert(
 				'추가된 영단어가 10개 미만입니다. 더 많은 단어를 추가해주세요.',
 			);
@@ -37,7 +40,23 @@ const Test = () => {
 			setPhase(2);
 		}
 	};
-
+	// 단어 개수 받아오기
+	const getWordCount = async classification => {
+		try {
+			const wordsCollection = collection(db, 'words');
+			const q = query(
+				wordsCollection,
+				where('classification', 'in', classification),
+			);
+			const querySnapshot = await getDocs(q);
+			const count = querySnapshot.size; // 문서의 개수를 반환
+			return count;
+		} catch (error) {
+			console.error(error);
+			return null;
+		}
+	};
+	// 무작위 셔플 함수
 	const getRandomWords = (arr, count) => {
 		const shuffled = arr.sort(() => Math.random() - 0.5);
 		return shuffled.slice(0, count);
@@ -56,6 +75,7 @@ const Test = () => {
 	const handleResult = () => {
 		setPhase(3);
 	};
+	// getData
 	const loadData = async arr => {
 		try {
 			const queryList = query(
@@ -67,7 +87,7 @@ const Test = () => {
 				id: doc.id,
 				...doc.data(),
 			}));
-
+			// 무작위로 10개의 단어 추출
 			setWords(getRandomWords(data, 10));
 		} catch (err) {
 			throw new Error(err);

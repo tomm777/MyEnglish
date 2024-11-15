@@ -1,6 +1,23 @@
+import correctIcon from '../../../public/assets/img/icons/correct_answer.png';
+import wrongIcon from '../../../public/assets/img/icons/wrong_answer.png';
+
 const ResultTable = ({ correctAnswers, myAnswers }) => {
-	console.log(myAnswers, 'myAnswers');
-	console.log(correctAnswers, 'correctAnswers');
+	// console.log(myAnswers, 'myAnswers');
+	// console.log(correctAnswers, 'correctAnswers');
+	let correctArr = [];
+	// 정답 체크
+	const answerCheck = myAnswer => {
+		for (let i = 0; i < 10; i++) {
+			console.log(correctAnswers[i].meaning);
+
+			correctArr.push(
+				correctAnswers[i].meaning
+					.split(',')
+					.filter(item => myAnswer[i].includes(item)),
+			);
+		}
+	};
+	answerCheck(myAnswers);
 
 	return (
 		<div>
@@ -29,12 +46,30 @@ const ResultTable = ({ correctAnswers, myAnswers }) => {
 							</td>
 							<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
 								{item.word}
+								<img
+									src={
+										correctArr[index].length > 0
+											? correctIcon
+											: wrongIcon
+									}
+									alt="체크 아이콘"
+									className="w-5 h-5 mr-2 float-right"
+									aria-hidden="true"
+								/>
 							</td>
 							<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
-								{item.meaning}
+								<span
+									className={
+										correctArr[index].length > 0
+											? 'text-green-400 font-bold'
+											: 'text-red-700 font-bold'
+									}
+								>
+									{item.meaning}
+								</span>
 							</td>
 							<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
-								{myAnswers[index]}
+								<span>{myAnswers[index]}</span>
 							</td>
 						</tr>
 					))}

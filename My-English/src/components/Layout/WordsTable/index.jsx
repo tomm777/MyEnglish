@@ -14,6 +14,7 @@ import {
 	startAfter,
 	startAt,
 	updateDoc,
+	where,
 } from '@firebase/firestore';
 import { db } from '../../../firebase/firebase';
 import Loading from '../../Loading';
@@ -77,6 +78,7 @@ const WordsTable = ({ props }) => {
 					...doc.data(),
 				}));
 				setTableData(updatedData);
+
 				// if (snapshot.size <= 20) {
 				// 	setTotalLength(snapshot.size); // 전체 데이터 개수 업데이트
 				// }
@@ -116,8 +118,6 @@ const WordsTable = ({ props }) => {
 
 	// 추가 데이터 로드
 	const loadData = async () => {
-		console.log(lastVisible);
-
 		if (!lastVisible) return;
 		setIsLoadingMore(true);
 		console.log('API 호출');
@@ -140,6 +140,7 @@ const WordsTable = ({ props }) => {
 			// 다음 호출을 위한 마지막 요소
 			setLastVisible(nextData.docs[nextData.docs.length - 1]);
 
+			console.log(nextDocs);
 			if (nextDocs.length > 0) {
 				setTableData(prevData => {
 					const existingIds = new Set(prevData.map(item => item.id));
@@ -249,6 +250,8 @@ const WordsTable = ({ props }) => {
 	// 단어 추가
 	const handleAddWord = async newWord => {
 		try {
+			console.log(newWord.word);
+
 			const addDateWord = {
 				...newWord,
 				createdAt: Date.now(),
@@ -277,7 +280,8 @@ const WordsTable = ({ props }) => {
 			{isModalOpen && (
 				<Modal onClose={closeModal} onAddWord={handleAddWord} />
 			)}
-			{isLoading || (isLoadingMore && <Loading />)}
+			{isLoading && <Loading />}
+			{isLoadingMore && <Loading />}
 			{/* 로딩 중일 때 로딩 스피너 표시 */}
 			{!isLoading && (
 				<div

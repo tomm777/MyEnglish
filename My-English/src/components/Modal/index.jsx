@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import useFocusOutValidation from '../../hooks/useValidation';
+import { collection, getDocs, query, where } from '@firebase/firestore';
+import { db } from '../../firebase/firebase';
 
 const Modal = ({ onClose, onAddWord }) => {
 	// 품사구분
@@ -15,25 +17,39 @@ const Modal = ({ onClose, onAddWord }) => {
 		setClassfication(value);
 	};
 	// Submit 핸들러
-	const handleSubmit = e => {
-		e.preventDefault();
-		if (isCheckWord || isCheckMeaning) {
-			return;
+	const handleSubmit = async e => {
+		try {
+			e.preventDefault();
+			if (isCheckWord || isCheckMeaning) {
+				return;
+			}
+			const newWords = {
+				word: capitalizeWord(wordRef.current.value),
+				meaning: meaningRef.current.value.replace(/\s+/g, ''),
+				classification: classficationValue,
+			};
+			// 중복 체크
+			const wordsCollection = collection(db, 'words');
+			const q = query(
+				wordsCollection,
+				where('word', '==', newWords.word),
+			); // 'word' 필드에서 중복 체크
+			const querySnapshot = await getDocs(q);
+
+			// 중복된 단어가 있는 경우 처리
+			if (!querySnapshot.empty) {
+				alert('이 단어는 이미 존재합니다.'); // 중복 경고
+				return; // 함수 종료
+			}
+			onAddWord(newWords);
+			wordRef.current.value = '';
+			meaningRef.current.value = '';
+		} catch (error) {
+			console.log(error);
 		}
-		const newWords = {
-			word: capitalizeWord(wordRef.current.value),
-			meaning: meaningRef.current.value,
-			classification: classficationValue,
-		};
-		onAddWord(newWords);
-		setClassfication('');
-		wordRef.current.value = '';
-		meaningRef.current.value = '';
 	};
 	const capitalizeWord = str => {
 		const newStr = str.trim();
-		console.log(newStr);
-
 		return newStr.charAt(0).toUpperCase() + newStr.slice(1);
 	};
 
