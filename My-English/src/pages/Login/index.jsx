@@ -2,37 +2,85 @@
 // import { useEffect } from 'react';
 // import { db } from '../firebase/firebase';
 
-const Login = () => {
-	// useEffect(() => {
-	// 	const fetchData = async () => {
-	// 		const querySnapshot = await getDocs(collection(db, 'My English'));
-	// 		setData(querySnapshot.docs.map(doc => doc.data()));
-	// 	};
-	// 	fetchData();
-	// }, []);
-	// const addData = async () => {
-	// 	await addDoc(collection(db, 'My English1'), {
-	// 		name: 'My English',
-	// 		index: 1221,
-	// 		createdAt: new Date(),
-	// 	});
-	// 	console.log('완료');
-	// };
+import { getAuth, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider } from 'firebase/auth/web-extension';
+import SignInGoogelPopup from '../../firebase/authGoogleSignin';
+import { useEffect } from 'react';
+import 'firebaseui/dist/firebaseui.css';
+import 'firebaseui';
+import firebase from 'firebase/compat/app';
 
+const Login = () => {
+	const auth = getAuth();
+	// const provider = new GoogleAuthProvider();
+	console.log(auth);
+
+	// const handleLogin = () => {
+	// 	SignInGoogelPopup();
+	// };
+	useEffect(() => {
+		const ui =
+			firebaseui.auth.AuthUI.getInstance() ||
+			new firebaseui.auth.AuthUI(getAuth());
+
+		const uiConfig = {
+			signInSuccessUrl: '/', // 로그인 성공 후 리디렉션할 URL
+			signInOptions: [
+				firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+				firebase.auth.EmailAuthProvider.PROVIDER_ID,
+				// 다른 제공자를 추가할 수 있습니다.
+			],
+			signInFlow: 'popup',
+		};
+		ui.start('#firebaseui-auth-container', uiConfig);
+	}, []);
 	return (
 		<>
-			<div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-				<div className="sm:mx-auto sm:w-full sm:max-w-sm">
-					<img
+			<div className="w-[30rem] mx-auto mt-12 p-6 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
+				<div className="sm:mx-auto sm:w-full sm:max-w-sm mb-8">
+					{/* <img
 						className="mx-auto h-10 w-auto"
 						src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600"
 						alt="My English"
-					/>
-					<h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
+					/> */}
+					<h2 className="mt-8 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
 						로그인이 필요한 서비스입니다.
 					</h2>
 				</div>
-				<div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+				<div id="firebaseui-auth-container"></div>
+				<div className="text-center mt-10">
+					{/* <button
+						onClick={handleLogin}
+						className="font-medium h-auto leading-normal max-w-[240px] min-h-[40px] p-2 px-4 text-left w-full bg-gray-200/20 shadow-md text-center"
+						data-provider-id="google.com"
+						style={{ backgroundColor: '#ffffff' }}
+						data-upgraded=",MaterialButton"
+					>
+						<img
+							className="w-5 h-5 inline-block mr-5 align-middle"
+							alt="GOOGLE"
+							src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+						/>
+						<span className="text-lg text-gray-700 font-medium align-middle">
+							Sign in with Google
+						</span>
+					</button> */}
+					{/* <div className="mt-10 mb-10"></div> */}
+					{/* <button
+						className=" bg-gray-200/20 shadow-md dir-ltr font-medium h-auto  leading-normal max-w-[240px] min-h-[40px] p-2 px-4 text-left w-full  text-center"
+						style={{ backgroundColor: '#db4437' }}
+					>
+						<img
+							className="w-6 h-5 inline-block mr-5 align-middle"
+							alt=""
+							src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/mail.svg"
+						/>
+						<span className="text-lg text-white font-medium align-middle">
+							Sign in with email
+						</span>
+					</button> */}
+				</div>
+				{/* <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
 					<form className="space-y-6" action="#" method="POST">
 						<div>
 							<label
@@ -84,7 +132,7 @@ const Login = () => {
 							</button>
 						</div>
 					</form>
-				</div>
+				</div> */}
 			</div>
 		</>
 	);

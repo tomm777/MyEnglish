@@ -114,6 +114,7 @@ const Test = () => {
 					words={words}
 					handleResult={handleResult}
 					buttons={buttons}
+					setPhase={setPhase}
 				/>
 			</div>
 		</>

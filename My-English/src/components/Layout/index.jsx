@@ -10,6 +10,7 @@ import {
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Outlet } from 'react-router-dom';
 import NavBar from '../NavBar';
+import { getAuth, signOut } from 'firebase/auth';
 
 const classNames = (...classes) => {
 	return classes.filter(Boolean).join(' ');
@@ -27,6 +28,18 @@ const userNavigation = [
 	{ name: '로그아웃', href: '#' },
 ];
 const Layout = () => {
+	const auth = getAuth();
+	const handleClick = type => {
+		if (type === '로그아웃') {
+			signOut(auth)
+				.then(() => {
+					alert('로그아웃 되었습니다');
+				})
+				.catch(err => {
+					console.log(err);
+				});
+		}
+	};
 	return (
 		<>
 			<div className="min-h-full">
@@ -43,30 +56,7 @@ const Layout = () => {
 												alt="My English"
 											/>
 										</div>
-										{/* <div className="hidden md:block">
-											<div className="ml-10 flex items-baseline space-x-4"> */}
 										<NavBar></NavBar>
-										{/* {navigation.map(item => (
-													<a
-														key={item.name}
-														href={item.href}
-														className={classNames(
-															item.current
-																? 'bg-gray-900 text-white'
-																: 'text-gray-300 hover:bg-gray-700 hover:text-white',
-															'rounded-md px-3 py-2 text-sm font-medium',
-														)}
-														aria-current={
-															item.current
-																? 'page'
-																: undefined
-														}
-													>
-														{item.name}
-													</a>
-												))} */}
-										{/* </div>
-										</div> */}
 									</div>
 									<div className="hidden md:block">
 										<div className="ml-4 flex items-center md:ml-6">
@@ -100,6 +90,11 @@ const Layout = () => {
 														item => (
 															<MenuItem
 																key={item.name}
+																onClick={() =>
+																	handleClick(
+																		item.name,
+																	)
+																}
 															>
 																{({
 																	focus,
@@ -213,18 +208,6 @@ const Layout = () => {
 						</>
 					)}
 				</Disclosure>
-
-				{/* <header className="bg-white shadow">
-					<div className="mx-auto max-w-7xl px-4 py-2	 sm:px-6 lg:px-8">
-						<h1 className="text-3xl font-bold tracking-tight text-gray-900">
-							단어 목록
-						</h1>
-					</div>
-				</header> */}
-				{/* <main>
-					<div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-					</div>
-				</main> */}
 			</div>
 			<Outlet />
 		</>

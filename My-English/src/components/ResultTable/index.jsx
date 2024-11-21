@@ -1,5 +1,5 @@
-import correctIcon from '../../../public/assets/img/icons/correct_answer.png';
-import wrongIcon from '../../../public/assets/img/icons/wrong_answer.png';
+import correctIcon from '/assets/img/icons/correct_answer.png';
+import wrongIcon from '/assets/img/icons/wrong_answer.png';
 
 const ResultTable = ({ correctAnswers, myAnswers }) => {
 	// console.log(myAnswers, 'myAnswers');

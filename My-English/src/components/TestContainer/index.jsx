@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import useTimer from '../../hooks/useTimer';
-// import WordsTable from '../Layout/WordsTable';
 import ResultTable from '../ResultTable';
+import { useNavigate } from 'react-router-dom';
 
 const TestContainer = ({
 	activeButton,
@@ -12,13 +12,13 @@ const TestContainer = ({
 	handleResult,
 	buttons,
 	words,
+	setPhase,
 }) => {
 	const inputRef = useRef('');
 	const [currentNum, setcurrentNum] = useState(0);
 	const [wordsMeaning, setWordsMeaning] = useState([]);
 	const handleSubmit = () => {
 		const inputValue = inputRef.current.value.replace(/\s+/g, '');
-		console.log(inputValue);
 		setWordsMeaning(prev => [...prev, inputValue]);
 		inputRef.current.value = '';
 		setcurrentNum(prev => prev + 1);
@@ -27,6 +27,7 @@ const TestContainer = ({
 		startTimer();
 	};
 	const { progress, startTimer, stopTimer } = useTimer(5000, handleSubmit); // 5초 타이머
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		if (phase === 2) {
@@ -47,6 +48,17 @@ const TestContainer = ({
 		if (e.key === 'Enter') {
 			handleSubmit();
 			e.target.value = '';
+		}
+	};
+	const handleClick = e => {
+		console.log(e.target.value === 'retest');
+
+		if (e.target.value === 'retest') {
+			window.location.href = '/test';
+			// navigate('/test');
+			// setPhase(1);
+		} else {
+			navigate('/');
 		}
 	};
 
@@ -159,13 +171,17 @@ const TestContainer = ({
 					<div className="text-center mt-10">
 						<button
 							type="button"
-							class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+							value="retest"
+							className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+							onClick={e => handleClick(e)}
 						>
 							재도전
 						</button>
 						<button
 							type="button"
-							class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
+							value="home"
+							className="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
+							onClick={e => handleClick(e)}
 						>
 							홈으로
 						</button>
