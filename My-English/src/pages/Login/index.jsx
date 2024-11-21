@@ -1,10 +1,4 @@
-// import { collection, getDocs } from '@firebase/firestore';
-// import { useEffect } from 'react';
-// import { db } from '../firebase/firebase';
-
-import { getAuth, signInWithPopup } from 'firebase/auth';
-import { GoogleAuthProvider } from 'firebase/auth/web-extension';
-import SignInGoogelPopup from '../../firebase/authGoogleSignin';
+import { getAuth } from 'firebase/auth';
 import { useEffect } from 'react';
 import 'firebaseui/dist/firebaseui.css';
 import 'firebaseui';
@@ -12,28 +6,39 @@ import firebase from 'firebase/compat/app';
 
 const Login = () => {
 	const auth = getAuth();
-	// const provider = new GoogleAuthProvider();
 	console.log(auth);
 
-	// const handleLogin = () => {
-	// 	SignInGoogelPopup();
-	// };
 	useEffect(() => {
+		// 이미 로그인된 사용자는 메인 페이지로 리다이렉트
+		if (auth.currentUser) {
+			console.log('로그인됨');
+
+			window.location.href = '/';
+			return;
+		}
+
 		const ui =
 			firebaseui.auth.AuthUI.getInstance() ||
 			new firebaseui.auth.AuthUI(getAuth());
 
 		const uiConfig = {
-			signInSuccessUrl: '/', // 로그인 성공 후 리디렉션할 URL
+			signInSuccessUrl: '/',
 			signInOptions: [
 				firebase.auth.GoogleAuthProvider.PROVIDER_ID,
 				firebase.auth.EmailAuthProvider.PROVIDER_ID,
-				// 다른 제공자를 추가할 수 있습니다.
 			],
 			signInFlow: 'popup',
+			callbacks: {
+				signInSuccessWithAuthResult: () => {
+					window.location.href = '/';
+					return false;
+				},
+			},
 		};
+
 		ui.start('#firebaseui-auth-container', uiConfig);
-	}, []);
+	}, [auth.currentUser]);
+
 	return (
 		<>
 			<div className="w-[30rem] mx-auto mt-12 p-6 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">

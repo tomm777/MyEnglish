@@ -6,11 +6,16 @@ import Layout from '../components/Layout';
 import Login from '../pages/Login';
 import SignUp from '../pages/SignUp';
 import Modal from '../components/Modal';
+import PrivateRoute from './privateRoute';
 
 const router = createBrowserRouter([
 	{
 		path: '/',
-		element: <Layout />,
+		element: (
+			<PrivateRoute>
+				<Layout />
+			</PrivateRoute>
+		),
 		children: [
 			{
 				path: '',
@@ -29,14 +34,6 @@ const router = createBrowserRouter([
 	{
 		path: '/login',
 		element: <Login />,
-	},
-	{
-		path: '/signup',
-		element: <SignUp />,
-	},
-	{
-		path: '/modal',
-		element: <Modal />,
 	},
 ]);
 
