@@ -1,10 +1,14 @@
-{
-	/* <script src="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth__ko.js"></script>
-<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.css" /> */
-}
-// import test from 'https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.css';
+import { useAuth } from '../../contexts/AuthContext';
+
 const SignUp = () => {
+	const { authUser } = useAuth();
+	console.log(authUser);
+
 	// Other config options...
+	// if (auth.currentUser) {
+	// 	window.location.href = '/';
+	// 	return;
+	// }
 
 	return (
 		<>

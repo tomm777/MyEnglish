@@ -1,24 +1,16 @@
-import { Suspense, useEffect } from 'react';
-import { RouterProvider, useNavigate } from 'react-router-dom';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { Suspense } from 'react';
+import { RouterProvider } from 'react-router-dom';
 import router from './routes/routing';
 import Loading from './components/Loading';
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
-	useEffect(() => {
-		const auth = getAuth();
-		// 상태변화 감지
-		onAuthStateChanged(auth, user => {
-			if (!user && window.location.pathname !== '/login') {
-				window.location.href = '/login';
-			}
-		});
-	}, []);
-
 	return (
-		<Suspense fallback={<Loading />}>
-			<RouterProvider router={router} />
-		</Suspense>
+		<AuthProvider>
+			<Suspense fallback={<Loading />}>
+				<RouterProvider router={router} />
+			</Suspense>
+		</AuthProvider>
 	);
 }
 

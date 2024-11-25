@@ -1,4 +1,10 @@
-import { getAuth } from 'firebase/auth';
+import {
+	createUserWithEmailAndPassword,
+	fetchSignInMethodsForEmail,
+	getAuth,
+	isSignInWithEmailLink,
+	signInWithEmailAndPassword,
+} from 'firebase/auth';
 import { useEffect } from 'react';
 import 'firebaseui/dist/firebaseui.css';
 import 'firebaseui';
@@ -9,14 +15,6 @@ const Login = () => {
 	console.log(auth);
 
 	useEffect(() => {
-		// 이미 로그인된 사용자는 메인 페이지로 리다이렉트
-		if (auth.currentUser) {
-			console.log('로그인됨');
-
-			window.location.href = '/';
-			return;
-		}
-
 		const ui =
 			firebaseui.auth.AuthUI.getInstance() ||
 			new firebaseui.auth.AuthUI(getAuth());
@@ -25,15 +23,14 @@ const Login = () => {
 			signInSuccessUrl: '/',
 			signInOptions: [
 				firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-				firebase.auth.EmailAuthProvider.PROVIDER_ID,
+				{
+					provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
+					signInMethod:
+						firebase.auth.EmailAuthProvider.PASSWORD_SIGN_IN_METHOD,
+					requireDisplayName: false,
+				},
 			],
 			signInFlow: 'popup',
-			callbacks: {
-				signInSuccessWithAuthResult: () => {
-					window.location.href = '/';
-					return false;
-				},
-			},
 		};
 
 		ui.start('#firebaseui-auth-container', uiConfig);

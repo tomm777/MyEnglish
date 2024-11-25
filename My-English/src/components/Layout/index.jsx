@@ -29,15 +29,14 @@ const userNavigation = [
 ];
 const Layout = () => {
 	const auth = getAuth();
-	const handleClick = type => {
+	const handleClick = async type => {
 		if (type === '로그아웃') {
-			signOut(auth)
-				.then(() => {
-					alert('로그아웃 되었습니다');
-				})
-				.catch(err => {
-					console.log(err);
-				});
+			try {
+				await signOut(auth);
+				navigate('/login'); // 로그아웃 후 로그인 페이지로 리다이렉션
+			} catch (error) {
+				console.error('로그아웃 중 오류 발생:', error);
+			}
 		}
 	};
 	return (

@@ -7,6 +7,7 @@ import Login from '../pages/Login';
 import SignUp from '../pages/SignUp';
 import Modal from '../components/Modal';
 import PrivateRoute from './privateRoute';
+import PublicRoute from './publicRoute';
 
 const router = createBrowserRouter([
 	{
@@ -33,7 +34,19 @@ const router = createBrowserRouter([
 	},
 	{
 		path: '/login',
-		element: <Login />,
+		element: (
+			<PublicRoute>
+				<Login />
+			</PublicRoute>
+		),
+	},
+	{
+		path: '/signup',
+		element: (
+			<PublicRoute>
+				<SignUp />
+			</PublicRoute>
+		),
 	},
 ]);
 
