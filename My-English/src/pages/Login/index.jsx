@@ -1,18 +1,13 @@
-import {
-	createUserWithEmailAndPassword,
-	fetchSignInMethodsForEmail,
-	getAuth,
-	isSignInWithEmailLink,
-	signInWithEmailAndPassword,
-} from 'firebase/auth';
-import { useEffect } from 'react';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { useEffect, useState } from 'react';
 import 'firebaseui/dist/firebaseui.css';
 import 'firebaseui';
 import firebase from 'firebase/compat/app';
 
 const Login = () => {
-	const auth = getAuth();
-	console.log(auth);
+	const [email, setEmail] = useState('');
+	const [password, setPassword] = useState('');
+	const [error, setError] = useState('');
 
 	useEffect(() => {
 		const ui =
@@ -20,21 +15,38 @@ const Login = () => {
 			new firebaseui.auth.AuthUI(getAuth());
 
 		const uiConfig = {
+			signInOptions: [firebase.auth.GoogleAuthProvider.PROVIDER_ID],
 			signInSuccessUrl: '/',
-			signInOptions: [
-				firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-				{
-					provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
-					signInMethod:
-						firebase.auth.EmailAuthProvider.PASSWORD_SIGN_IN_METHOD,
-					requireDisplayName: false,
-				},
-			],
 			signInFlow: 'popup',
 		};
 
 		ui.start('#firebaseui-auth-container', uiConfig);
-	}, [auth.currentUser]);
+	}, []);
+	const handleSubmit = async e => {
+		e.preventDefault();
+
+		try {
+			const auth = getAuth();
+
+			await signInWithEmailAndPassword(auth, email, password);
+		} catch (error) {
+			console.log(error);
+
+			switch (error.code) {
+				case 'auth/invalid-email':
+					setError('올바른 이메일 형식이 아닙니다.');
+					break;
+				case 'auth/user-not-found':
+					alert('등록되지 않은 이메일입니다.');
+					break;
+				case 'auth/wrong-password':
+					setError('비밀번호가 일치하지 않습니다.');
+					break;
+				default:
+					setError('로그인에 실패했습니다. 다시 시도해주세요.');
+			}
+		}
+	};
 
 	return (
 		<>
@@ -49,10 +61,9 @@ const Login = () => {
 						로그인이 필요한 서비스입니다.
 					</h2>
 				</div>
-				<div id="firebaseui-auth-container"></div>
-				<div className="text-center mt-10">
-					{/* <button
-						onClick={handleLogin}
+				{/* <div className="text-center mt-10">
+					<button
+						// onClick={handleLogin}
 						className="font-medium h-auto leading-normal max-w-[240px] min-h-[40px] p-2 px-4 text-left w-full bg-gray-200/20 shadow-md text-center"
 						data-provider-id="google.com"
 						style={{ backgroundColor: '#ffffff' }}
@@ -66,9 +77,9 @@ const Login = () => {
 						<span className="text-lg text-gray-700 font-medium align-middle">
 							Sign in with Google
 						</span>
-					</button> */}
-					{/* <div className="mt-10 mb-10"></div> */}
-					{/* <button
+					</button>
+					<div className="mt-10 mb-10"></div>
+					<button
 						className=" bg-gray-200/20 shadow-md dir-ltr font-medium h-auto  leading-normal max-w-[240px] min-h-[40px] p-2 px-4 text-left w-full  text-center"
 						style={{ backgroundColor: '#db4437' }}
 					>
@@ -80,10 +91,10 @@ const Login = () => {
 						<span className="text-lg text-white font-medium align-middle">
 							Sign in with email
 						</span>
-					</button> */}
-				</div>
-				{/* <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-					<form className="space-y-6" action="#" method="POST">
+					</button>
+				</div> */}
+				<div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+					<form className="space-y-6" onSubmit={handleSubmit}>
 						<div>
 							<label
 								htmlFor="email"
@@ -97,6 +108,8 @@ const Login = () => {
 									name="email"
 									type="email"
 									autoComplete="email"
+									value={email}
+									onChange={e => setEmail(e.target.value)}
 									required
 									className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 								/>
@@ -119,6 +132,8 @@ const Login = () => {
 									name="password"
 									type="password"
 									autoComplete="current-password"
+									value={password}
+									onChange={e => setPassword(e.target.value)}
 									required
 									className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 								/>
@@ -133,8 +148,18 @@ const Login = () => {
 								로그인
 							</button>
 						</div>
+						<p className="mt-10 text-center text-sm/6 text-gray-500">
+							아직 계정이 없으신가요?
+							<a
+								href="/signup"
+								className="font-semibold text-indigo-600 hover:text-indigo-500 pl-1"
+							>
+								계정 생성
+							</a>
+						</p>
 					</form>
-				</div> */}
+				</div>
+				<div id="firebaseui-auth-container"></div>
 			</div>
 		</>
 	);

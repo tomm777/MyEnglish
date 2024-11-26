@@ -33,7 +33,6 @@ const Layout = () => {
 		if (type === '로그아웃') {
 			try {
 				await signOut(auth);
-				navigate('/login'); // 로그아웃 후 로그인 페이지로 리다이렉션
 			} catch (error) {
 				console.error('로그아웃 중 오류 발생:', error);
 			}

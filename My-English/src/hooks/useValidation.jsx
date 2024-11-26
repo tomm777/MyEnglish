@@ -11,20 +11,22 @@ const useFocusOutValidation = () => {
 	};
 
 	const handleFocusOut = () => {
-		if (ref.current.name === 'word') {
-			if (ref.current && !InputValidation.en.test(ref.current.value)) {
-				setIsCheck(true);
+		const value = ref.current.value;
+		const name = ref.current.name;
+
+		const validationRules = {
+			email: InputValidation.email,
+			name: InputValidation.kr,
+			word: InputValidation.en,
+			meaning: InputValidation.kr,
+			password: InputValidation.password,
+		};
+
+		if (validationRules[name]) {
+			const isValid = validationRules[name].test(value);
+			setIsCheck(!isValid);
+			if (!isValid) {
 				ref.current.focus();
-			} else {
-				setIsCheck(false);
-			}
-		}
-		if (ref.current.name === 'meaning') {
-			if (ref.current && !InputValidation.kr.test(ref.current.value)) {
-				setIsCheck(true);
-				ref.current.focus();
-			} else {
-				setIsCheck(false);
 			}
 		}
 	};

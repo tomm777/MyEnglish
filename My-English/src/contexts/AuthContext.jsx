@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
 	const [loading, setLoading] = useState(true);
 	const auth = getAuth();
 
+	// 현재 로그인 상태 감지 확인
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, user => {
 			setAuthUser(user);
