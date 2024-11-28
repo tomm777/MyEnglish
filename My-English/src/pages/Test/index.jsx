@@ -2,6 +2,7 @@ import { act, useEffect, useRef, useState } from 'react';
 import TestContainer from '../../components/TestContainer';
 import { collection, getDocs, query, where } from '@firebase/firestore';
 import { db } from '../../firebase/firebase';
+import { useAuth } from '../../contexts/AuthContext';
 const buttons = [
 	{ index: 1, value: '동사', class: 'V' },
 	{ index: 2, value: '형용사', class: 'A' },
@@ -15,6 +16,7 @@ const Test = () => {
 	const [isCheck, setIsCheck] = useState(false);
 	const [phase, setPhase] = useState(1);
 	const [words, setWords] = useState([]);
+	const { authUser } = useAuth();
 	const handleOnTest = async () => {
 		if (activeButton.length < 1) {
 			setIsCheck(true);
@@ -47,6 +49,7 @@ const Test = () => {
 			const q = query(
 				wordsCollection,
 				where('classification', 'in', classification),
+				where('userId', '==', authUser.uid),
 			);
 			const querySnapshot = await getDocs(q);
 			const count = querySnapshot.size; // 문서의 개수를 반환
@@ -80,7 +83,8 @@ const Test = () => {
 		try {
 			const queryList = query(
 				collection(db, 'words'),
-				where('classification', 'in', arr), // 선택한 classification에 따라 필터링
+				where('classification', 'in', arr),
+				where('userId', '==', authUser.uid), // 선택한 classification에 따라 필터링
 			);
 			const getData = await getDocs(queryList);
 			const data = getData.docs.map(doc => ({

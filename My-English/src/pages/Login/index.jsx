@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import 'firebaseui/dist/firebaseui.css';
 import 'firebaseui';
 import firebase from 'firebase/compat/app';
+import { db } from '../../firebase/firebase';
+import { doc, serverTimestamp, setDoc } from '@firebase/firestore';
 
 const Login = () => {
 	const [email, setEmail] = useState('');
@@ -13,11 +15,32 @@ const Login = () => {
 		const ui =
 			firebaseui.auth.AuthUI.getInstance() ||
 			new firebaseui.auth.AuthUI(getAuth());
-
 		const uiConfig = {
 			signInOptions: [firebase.auth.GoogleAuthProvider.PROVIDER_ID],
-			signInSuccessUrl: '/',
 			signInFlow: 'popup',
+			callbacks: {
+				signInSuccessWithAuthResult: async authResult => {
+					const user = authResult.user;
+					const isNewUser = authResult.additionalUserInfo?.isNewUser;
+
+					if (isNewUser) {
+						try {
+							const userRef = doc(db, 'users', user.uid);
+							await setDoc(userRef, {
+								email: user.email,
+								name: user.displayName,
+								createdAt: serverTimestamp(),
+								provider: 'google',
+								userId: user.uid,
+							});
+							console.log('New user data saved successfully');
+						} catch (error) {
+							console.error('Error saving user data:', error);
+						}
+					}
+					return false; // Prevent redirect to signInSuccessUrl
+				},
+			},
 		};
 
 		ui.start('#firebaseui-auth-container', uiConfig);
@@ -33,14 +56,16 @@ const Login = () => {
 			console.log(error);
 
 			switch (error.code) {
+				case 'auth/invalid-credential':
+					alert('이메일 또는 비밀번호가 올바르지 않습니다.');
+					break;
 				case 'auth/invalid-email':
 					setError('올바른 이메일 형식이 아닙니다.');
 					break;
-				case 'auth/user-not-found':
-					alert('등록되지 않은 이메일입니다.');
-					break;
-				case 'auth/wrong-password':
-					setError('비밀번호가 일치하지 않습니다.');
+				case 'auth/too-many-requests':
+					setError(
+						'너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.',
+					);
 					break;
 				default:
 					setError('로그인에 실패했습니다. 다시 시도해주세요.');

@@ -6,6 +6,7 @@ import {
 	collection,
 	deleteDoc,
 	doc,
+	getDoc,
 	getDocs,
 	limit,
 	onSnapshot,
@@ -18,6 +19,7 @@ import {
 } from '@firebase/firestore';
 import { db } from '../../../firebase/firebase';
 import Loading from '../../Loading';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const WordsTable = ({ props }) => {
 	const [editIndex, setEditIndex] = useState(null);
@@ -44,6 +46,8 @@ const WordsTable = ({ props }) => {
 		handleMeaningFocusOut,
 		handleResetMeaningCheck,
 	] = useFocusOutValidation();
+	// 유저 정보
+	const { authUser } = useAuth();
 
 	// Edit모드에서 카테고리를 변경할 때 Edit모드 종료
 	useEffect(() => {
@@ -63,8 +67,14 @@ const WordsTable = ({ props }) => {
 	}, [lastElementRef.current, tableData]);
 	useEffect(() => {
 		setIsLoading(true);
+		if (!authUser) {
+			setIsLoading(false);
+			return;
+		}
+
 		const q = query(
 			collection(db, 'words'),
+			where('userId', '==', authUser.uid),
 			orderBy('createdAt', 'asc'),
 			limit(20),
 		);
@@ -73,10 +83,12 @@ const WordsTable = ({ props }) => {
 		const unsubscribe = onSnapshot(
 			q,
 			snapshot => {
-				const updatedData = snapshot.docs.map(doc => ({
-					id: doc.id,
-					...doc.data(),
-				}));
+				const updatedData = snapshot.docs
+					.map(doc => ({
+						id: doc.id,
+						...doc.data(),
+					}))
+					.filter(doc => doc.userId === authUser.uid);
 				setTableData(updatedData);
 
 				// if (snapshot.size <= 20) {
@@ -100,11 +112,16 @@ const WordsTable = ({ props }) => {
 	}, []);
 	const fetchTotalLength = async () => {
 		// 전체 데이터 개수
-		const totalSnapshot = await getDocs(collection(db, 'words'));
+		const totalSnapshot = await getDocs(
+			query(collection(db, 'words'), where('userId', '==', authUser.uid)),
+		);
 		setTotalLength(totalSnapshot.docs.length); // 전체 데이터 개수 업데이트
 	};
 	// observe 동작
 	const observerCallback = entries => {
+		if (window.location.pathname === '/test') {
+			return;
+		}
 		console.log(totalLength, 'totalLength', currentLength, 'currentLength');
 		if (totalLength <= currentLength) {
 			console.log('모든 데이터가 로드되었습니다.');
@@ -127,6 +144,7 @@ const WordsTable = ({ props }) => {
 			// 기존 20개의 초기 데이터 이 후의 처리
 			const nextQuery = query(
 				collection(db, 'words'),
+				where('userId', '==', authUser.uid),
 				orderBy('createdAt', 'asc'),
 				startAfter(lastVisible),
 				limit(20),
@@ -193,11 +211,26 @@ const WordsTable = ({ props }) => {
 		if (isCheckWord || isCheckMeaning) {
 			return;
 		}
+		// 중복 체크
+		const q = query(
+			collection(db, 'words'),
+			where('word', '==', wordRef.current.value),
+			where('userId', '==', authUser.uid),
+		);
+		const querySnapshot = await getDocs(q);
+
+		// 중복된 단어가 있는 경우 처리
+		if (!querySnapshot.empty) {
+			alert('이 단어는 이미 존재합니다.'); // 중복 경고
+			return; // 함수 종료
+		}
+
 		const docRef = doc(db, 'words', id);
 		const newData = {
-			word: wordRef.current.value,
+			word: capitalizeWord(wordRef.current.value),
 			meaning: meaningRef.current.value,
 			classification: modifyClassification,
+			userId: authUser.uid,
 		};
 		await updateDoc(docRef, newData);
 		if (currentLength >= 20) {
@@ -229,8 +262,10 @@ const WordsTable = ({ props }) => {
 	const handleRemove = async id => {
 		try {
 			const docRef = doc(db, 'words', id);
-
-			await deleteDoc(docRef);
+			const docSnap = await getDoc(docRef);
+			if (docSnap.exists() && docSnap.data().userId === authUser.uid) {
+				await deleteDoc(docRef);
+			}
 			if (currentLength > 20) {
 				setCurrentLength(prev => (prev > 0 ? prev - 1 : 0));
 			}
@@ -250,12 +285,16 @@ const WordsTable = ({ props }) => {
 	// 단어 추가
 	const handleAddWord = async newWord => {
 		try {
-			console.log(newWord.word);
+			if (!authUser) {
+				throw new Error('로그인 후 이용해주세요.');
+			}
 
 			const addDateWord = {
 				...newWord,
 				createdAt: Date.now(),
+				userId: authUser.uid, // Add user ID to the word document
 			};
+
 			const docRef = await addDoc(collection(db, 'words'), addDateWord);
 			// 초기 데이터는 firebase에서 실시간으로 업데이트 하기때문에 추후의 데이터는 별도로 관리
 			if (currentLength >= 20) {
@@ -271,9 +310,13 @@ const WordsTable = ({ props }) => {
 			setIsModalOpen(false); // 모달 닫기
 		} catch (err) {
 			console.log(err);
-
-			throw new Error('err', err.message);
+			throw new Error('err', err);
 		}
+	};
+	// 첫글자 대문자로 변환
+	const capitalizeWord = str => {
+		const newStr = str.trim();
+		return newStr.charAt(0).toUpperCase() + newStr.slice(1);
 	};
 	return (
 		<>

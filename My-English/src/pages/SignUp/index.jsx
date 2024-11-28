@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import useFocusOutValidation from '../../hooks/useValidation';
-import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import {
+	createUserWithEmailAndPassword,
+	fetchSignInMethodsForEmail,
+	getAuth,
+} from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from '@firebase/firestore';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../../firebase/firebase';
+import { auth, db } from '../../firebase/firebase';
 
 const SignUp = () => {
 	const [emailRef, isEmailCheck, handleEmailFocusOut] =
@@ -20,7 +24,7 @@ const SignUp = () => {
 
 	// CapsLock 상태 감지
 	const handleCapsLock = e => {
-		setCapsLockOn(e.getModifierState('CapsLock'));
+		// setCapsLockOn(e.getModifierState('CapsLock'));
 	};
 	useEffect(() => {
 		if (confirmPassword && password !== confirmPassword) {
@@ -37,24 +41,36 @@ const SignUp = () => {
 			return;
 		}
 		try {
-			const auth = getAuth();
 			const userCredential = await createUserWithEmailAndPassword(
 				auth,
 				emailRef.current.value,
 				password,
-				nameRef.current.value,
 			);
-
 			// Firestore에 사용자 정보 저장
 			const userRef = doc(db, 'users', userCredential.user.uid);
 			await setDoc(userRef, {
 				email: emailRef.current.value,
 				name: nameRef.current.value,
+				provider: 'email',
 				createdAt: serverTimestamp(),
+				userID: userCredential.user.uid,
 			});
 			alert('성공적으로 가입되었습니다.');
 		} catch (error) {
 			console.error('Error:', error);
+			switch (error.code) {
+				case 'auth/email-already-in-use':
+					alert('이미 가입된 이메일입니다.');
+					break;
+				case 'auth/invalid-email':
+					alert('올바른 이메일 형식이 아닙니다.');
+					break;
+				case 'auth/operation-not-allowed':
+					alert('이메일/비밀번호 회원가입이 비활성화되어 있습니다.');
+					break;
+				default:
+					alert('회원가입 중 오류가 발생했습니다.');
+			}
 		}
 	};
 

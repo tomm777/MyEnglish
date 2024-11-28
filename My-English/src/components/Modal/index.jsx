@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import useFocusOutValidation from '../../hooks/useValidation';
 import { collection, getDocs, query, where } from '@firebase/firestore';
-import { db } from '../../firebase/firebase';
+import { auth, db } from '../../firebase/firebase';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Modal = ({ onClose, onAddWord }) => {
 	// 품사구분
@@ -11,7 +12,10 @@ const Modal = ({ onClose, onAddWord }) => {
 	const [wordRef, isCheckWord, handleWordFocusOut] = useFocusOutValidation();
 	const [meaningRef, isCheckMeaning, handleMeaningFocusOut] =
 		useFocusOutValidation();
-
+	const { authUser } = useAuth();
+	useEffect(() => {
+		wordRef.current.focus();
+	}, []);
 	const handleOnChange = e => {
 		const { value } = e.target;
 		setClassfication(value);
@@ -29,11 +33,11 @@ const Modal = ({ onClose, onAddWord }) => {
 				classification: classficationValue,
 			};
 			// 중복 체크
-			const wordsCollection = collection(db, 'words');
 			const q = query(
-				wordsCollection,
+				collection(db, 'words'),
 				where('word', '==', newWords.word),
-			); // 'word' 필드에서 중복 체크
+				where('userId', '==', authUser.uid),
+			);
 			const querySnapshot = await getDocs(q);
 
 			// 중복된 단어가 있는 경우 처리
