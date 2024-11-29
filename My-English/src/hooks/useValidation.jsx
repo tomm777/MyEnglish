@@ -16,7 +16,6 @@ const useFocusOutValidation = () => {
 
 		const validationRules = {
 			email: InputValidation.email,
-			name: InputValidation.kr,
 			word: InputValidation.en,
 			meaning: InputValidation.kr,
 			password: InputValidation.password,

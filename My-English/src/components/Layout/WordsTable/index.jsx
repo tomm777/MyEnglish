@@ -17,7 +17,7 @@ import {
 	updateDoc,
 	where,
 } from '@firebase/firestore';
-import { db } from '../../../firebase/firebase';
+import { auth, db } from '../../../firebase/firebase';
 import Loading from '../../Loading';
 import { useAuth } from '../../../contexts/AuthContext';
 

@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import useFocusOutValidation from '../../hooks/useValidation';
-import {
-	createUserWithEmailAndPassword,
-	fetchSignInMethodsForEmail,
-	getAuth,
-} from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from '@firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../firebase/firebase';
@@ -13,11 +8,10 @@ import { auth, db } from '../../firebase/firebase';
 const SignUp = () => {
 	const [emailRef, isEmailCheck, handleEmailFocusOut] =
 		useFocusOutValidation();
-	const [nameRef, isNameCheck, handleNameFocusOut] = useFocusOutValidation();
 	const [passwordRef, isPasswordCheck, handlePasswordFocusOut] =
 		useFocusOutValidation();
-	const navigate = useNavigate();
-	const [capsLockOn, setCapsLockOn] = useState(false);
+	const [capsLockOn, _] = useState(false);
+	const [name, setName] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [password, setPassword] = useState('');
 	const [isConfirmPasswordCheck, setIsConfirmPasswordCheck] = useState(false);
@@ -37,7 +31,7 @@ const SignUp = () => {
 	const handleSubmit = async e => {
 		e.preventDefault();
 
-		if (isEmailCheck || isNameCheck || isConfirmPasswordCheck) {
+		if (isEmailCheck || isConfirmPasswordCheck || !name) {
 			return;
 		}
 		try {
@@ -46,16 +40,21 @@ const SignUp = () => {
 				emailRef.current.value,
 				password,
 			);
+			//
+			updateProfile(userCredential.user, {
+				displayName: name,
+			});
+
 			// Firestore에 사용자 정보 저장
 			const userRef = doc(db, 'users', userCredential.user.uid);
 			await setDoc(userRef, {
 				email: emailRef.current.value,
-				name: nameRef.current.value,
+				name: name,
 				provider: 'email',
 				createdAt: serverTimestamp(),
 				userID: userCredential.user.uid,
 			});
-			alert('성공적으로 가입되었습니다.');
+			alert('회원가입 완료');
 		} catch (error) {
 			console.error('Error:', error);
 			switch (error.code) {
@@ -70,6 +69,7 @@ const SignUp = () => {
 					break;
 				default:
 					alert('회원가입 중 오류가 발생했습니다.');
+					break;
 			}
 		}
 	};
@@ -131,19 +131,13 @@ const SignUp = () => {
 									</label>
 									<input
 										type="name"
-										ref={nameRef}
-										onBlur={handleNameFocusOut}
+										// ref={nameRef}
+										// onBlur={handleNameFocusOut}
+										onChange={e => setName(e.target.value)}
 										className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 										placeholder="홍길동"
 										required
 									/>
-									{isNameCheck && (
-										<p className="mt-2 text-sm text-red-600 dark:text-red-500">
-											<span className="font-medium">
-												한글을 올바르게 입력하세요.
-											</span>
-										</p>
-									)}
 								</div>
 								<div className="relative">
 									<label

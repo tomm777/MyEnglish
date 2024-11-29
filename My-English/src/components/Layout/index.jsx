@@ -11,17 +11,12 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Outlet } from 'react-router-dom';
 import NavBar from '../NavBar';
 import { getAuth, signOut } from 'firebase/auth';
+import { useAuth } from '../../contexts/AuthContext';
 
 const classNames = (...classes) => {
 	return classes.filter(Boolean).join(' ');
 };
 
-const user = {
-	name: 'Tom Cook',
-	email: 'tom@example.com',
-	imageUrl:
-		'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-};
 const userNavigation = [
 	{ name: 'Your Profile', href: '#' },
 	{ name: 'Settings', href: '#' },
@@ -29,6 +24,17 @@ const userNavigation = [
 ];
 const Layout = () => {
 	const auth = getAuth();
+	const { authUser } = useAuth();
+	console.log(auth.currentUser);
+
+	const user = {
+		name: authUser.displayName,
+		email: authUser.email,
+		imageUrl: authUser.photoURL
+			? authUser.photoURL
+			: '/assets/img/icons/default_Profile.png',
+	};
+
 	const handleClick = async type => {
 		if (type === '로그아웃') {
 			try {
