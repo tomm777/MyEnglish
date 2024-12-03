@@ -20,12 +20,18 @@ import {
 import { auth, db } from '../../../firebase/firebase';
 import Loading from '../../Loading';
 import { useAuth } from '../../../contexts/AuthContext';
+import SearchBar from '../../SearchBar';
 
 const WordsTable = ({ props }) => {
 	const [editIndex, setEditIndex] = useState(null);
 	const [tableData, setTableData] = useState([]);
+	// const [filteredData, setFilteredData] = useState(tableData);
+
 	const [classification, setClassification] = useState('ALL');
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	// 검색 모드
+	const [isSearching, setIsSearching] = useState(false);
+
 	const [isLoading, setIsLoading] = useState(true);
 	// const [page, setPage] = useState(1);
 	const lastElementRef = useRef();
@@ -48,11 +54,6 @@ const WordsTable = ({ props }) => {
 	] = useFocusOutValidation();
 	// 유저 정보
 	const { authUser } = useAuth();
-
-	// Edit모드에서 카테고리를 변경할 때 Edit모드 종료
-	useEffect(() => {
-		setEditIndex(null);
-	}, [classification]);
 	useEffect(() => {
 		observerRef.current = new IntersectionObserver(observerCallback);
 		if (lastElementRef.current) {
@@ -64,70 +65,96 @@ const WordsTable = ({ props }) => {
 				observerRef.current.disconnect();
 			}
 		};
-	}, [lastElementRef.current, tableData]);
+	}, [lastElementRef.current, tableData, isSearching]);
 	useEffect(() => {
+		if (!authUser) return;
 		setIsLoading(true);
-		if (!authUser) {
+		setTableData([]); // 기존 데이터 초기화
+		setCurrentLength(0); // 현재 길이 초기화
+		setLastVisible(null); // lastVisible도 초기화 추가
+		setIsSearching(false); // 검색 모드 초기화
+
+		try {
+			// 품사 구분에 따른 조건부 쿼리
+			const baseQuery =
+				classification === 'ALL'
+					? query(
+							collection(db, 'words'),
+							where('userId', '==', authUser.uid),
+							orderBy('createdAt', 'asc'),
+							limit(20),
+						)
+					: query(
+							collection(db, 'words'),
+							where('userId', '==', authUser.uid),
+							where('classification', '==', classification),
+							orderBy('createdAt', 'asc'),
+							limit(20),
+						);
+
+			// Firestore 실시간 업데이트
+			const unsubscribe = onSnapshot(
+				baseQuery,
+				snapshot => {
+					const updatedData = snapshot.docs
+						.map(doc => ({
+							id: doc.id,
+							...doc.data(),
+						}))
+						.filter(doc => doc.userId === authUser.uid);
+
+					setTableData(updatedData);
+					setCurrentLength(updatedData.length); // 현재 데이터 길이 업데이트
+
+					if (snapshot.docs.length > 0) {
+						setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+					} else {
+						setLastVisible(null); // 데이터가 없을 경우 lastVisible 초기화
+					}
+				},
+				error => {
+					console.error('Snapshot error:', error);
+				},
+			);
+
+			// 전체 데이터 개수 업데이트 - 즉시 실행
+			const updateTotalLength = async () => {
+				const totalQuery =
+					classification === 'ALL'
+						? query(
+								collection(db, 'words'),
+								where('userId', '==', authUser.uid),
+							)
+						: query(
+								collection(db, 'words'),
+								where('userId', '==', authUser.uid),
+								where('classification', '==', classification),
+							);
+
+				const snapshot = await getDocs(totalQuery);
+				setTotalLength(snapshot.docs.length);
+			};
+
+			updateTotalLength();
 			setIsLoading(false);
-			return;
+			return () => unsubscribe();
+		} catch (error) {
+			console.error('Error fetching data:', error);
 		}
+	}, [classification, authUser]);
 
-		const q = query(
-			collection(db, 'words'),
-			where('userId', '==', authUser.uid),
-			orderBy('createdAt', 'asc'),
-			limit(20),
-		);
-
-		// Firestore 실시간 업데이트
-		const unsubscribe = onSnapshot(
-			q,
-			snapshot => {
-				const updatedData = snapshot.docs
-					.map(doc => ({
-						id: doc.id,
-						...doc.data(),
-					}))
-					.filter(doc => doc.userId === authUser.uid);
-				setTableData(updatedData);
-
-				// if (snapshot.size <= 20) {
-				// 	setTotalLength(snapshot.size); // 전체 데이터 개수 업데이트
-				// }
-
-				setCurrentLength(updatedData.length); // 현재 데이터 개수 업데이트
-
-				if (snapshot.docs.length > 0) {
-					setLastVisible(snapshot.docs[snapshot.docs.length - 1]); // 마지막 문서 저장
-				}
-			},
-			error => {
-				console.error('Snapshot error:', error);
-			},
-			fetchTotalLength(),
-		);
-		setIsLoading(false);
-		// 컴포넌트 언마운트 시 리스너 해제
-		return () => unsubscribe();
-	}, []);
-	const fetchTotalLength = async () => {
-		// 전체 데이터 개수
-		const totalSnapshot = await getDocs(
-			query(collection(db, 'words'), where('userId', '==', authUser.uid)),
-		);
-		setTotalLength(totalSnapshot.docs.length); // 전체 데이터 개수 업데이트
-	};
 	// observe 동작
 	const observerCallback = entries => {
-		if (window.location.pathname === '/test') {
+		console.log(currentLength, totalLength);
+
+		if (
+			window.location.pathname === '/test' ||
+			isSearching || // 검색 중일 때는 무한 스크롤 비활성화
+			totalLength <= currentLength
+		) {
 			return;
 		}
-		console.log(totalLength, 'totalLength', currentLength, 'currentLength');
-		if (totalLength <= currentLength) {
-			console.log('모든 데이터가 로드되었습니다.');
-			// setIsLoading(false);
-			return;
-		}
+
 		if (entries[0].isIntersecting && !isLoadingMore) {
 			loadData(); // 다음 데이터 로드
 		}
@@ -135,42 +162,47 @@ const WordsTable = ({ props }) => {
 
 	// 추가 데이터 로드
 	const loadData = async () => {
+		console.log('loadData');
+
 		if (!lastVisible) return;
 		setIsLoadingMore(true);
-		console.log('API 호출');
 
-		// setIsLoading(true);
 		try {
-			// 기존 20개의 초기 데이터 이 후의 처리
-			const nextQuery = query(
-				collection(db, 'words'),
-				where('userId', '==', authUser.uid),
-				orderBy('createdAt', 'asc'),
-				startAfter(lastVisible),
-				limit(20),
-			);
+			const nextQuery =
+				classification === 'ALL'
+					? query(
+							collection(db, 'words'),
+							where('userId', '==', authUser.uid),
+							orderBy('createdAt', 'asc'),
+							startAfter(lastVisible),
+							limit(20),
+						)
+					: query(
+							collection(db, 'words'),
+							where('userId', '==', authUser.uid),
+							where('classification', '==', classification),
+							orderBy('createdAt', 'asc'),
+							startAfter(lastVisible),
+							limit(20),
+						);
 
 			const nextData = await getDocs(nextQuery);
 			const nextDocs = nextData.docs.map(doc => ({
 				id: doc.id,
 				...doc.data(),
 			}));
-			// 다음 호출을 위한 마지막 요소
-			setLastVisible(nextData.docs[nextData.docs.length - 1]);
 
-			console.log(nextDocs);
 			if (nextDocs.length > 0) {
+				setLastVisible(nextData.docs[nextData.docs.length - 1]);
 				setTableData(prevData => {
 					const existingIds = new Set(prevData.map(item => item.id));
-
 					const uniqueNextDocs = nextDocs.filter(
 						item => !existingIds.has(item.id),
 					);
-
-					return [...prevData, ...uniqueNextDocs]; // 기존 데이터와 병합
+					return [...prevData, ...uniqueNextDocs];
 				});
+				setCurrentLength(prev => prev + nextDocs.length);
 			}
-			setCurrentLength(prev => prev + nextDocs.length);
 		} catch (err) {
 			console.error(
 				'데이터를 불러오는 중 오류가 발생했습니다:',
@@ -180,14 +212,6 @@ const WordsTable = ({ props }) => {
 			setIsLoadingMore(false);
 		}
 	};
-
-	// Table Data에서 select 박스 옵션 변경 핸들러
-	// 필터링된 데이터 계산
-	const filteredData = useMemo(() => {
-		return classification === 'ALL'
-			? tableData
-			: tableData.filter(item => item.classification === classification);
-	}, [classification, tableData]);
 
 	// 품사 구분
 	const getPartOfSpeech = classification => {
@@ -214,25 +238,34 @@ const WordsTable = ({ props }) => {
 		// 중복 체크
 		const q = query(
 			collection(db, 'words'),
-			where('word', '==', wordRef.current.value),
+			where('word', '==', capitalizeWord(wordRef.current.value)),
 			where('userId', '==', authUser.uid),
 		);
 		const querySnapshot = await getDocs(q);
 
-		// 중복된 단어가 있는 경우 처리
-		if (!querySnapshot.empty) {
-			alert('이 단어는 이미 존재합니다.'); // 중복 경고
-			return; // 함수 종료
-		}
-
-		const docRef = doc(db, 'words', id);
+		// 중복 단어 체크 및 업데이트
 		const newData = {
 			word: capitalizeWord(wordRef.current.value),
 			meaning: meaningRef.current.value,
 			classification: modifyClassification,
 			userId: authUser.uid,
 		};
-		await updateDoc(docRef, newData);
+
+		// 자기 자신의 단어인 경우 업데이트 허용
+		if (querySnapshot.docs[0]?.id === id) {
+			await updateDoc(doc(db, 'words', id), newData);
+		}
+		// 다른 단어와 중복되는 경우 에러
+		else if (!querySnapshot.empty) {
+			alert('이 단어는 이미 존재합니다.');
+			return;
+		}
+		// 중복 없는 경우 업데이트
+		else {
+			await updateDoc(doc(db, 'words', id), newData);
+		}
+
+		// 테이블 데이터 업데이트
 		if (currentLength >= 20) {
 			setTableData(prevData =>
 				prevData.map(item =>
@@ -240,6 +273,7 @@ const WordsTable = ({ props }) => {
 				),
 			);
 		}
+
 		setEditIndex(null);
 	};
 	// 수정 취소
@@ -255,6 +289,8 @@ const WordsTable = ({ props }) => {
 	};
 	// 수정 버튼 클릭 이벤트
 	const handleEdit = index => {
+		console.log(tableData[index].classification);
+
 		setModifyClassification(tableData[index].classification);
 		setEditIndex(index);
 	};
@@ -318,232 +354,266 @@ const WordsTable = ({ props }) => {
 		const newStr = str.trim();
 		return newStr.charAt(0).toUpperCase() + newStr.slice(1);
 	};
+	// 단어 검색
+	const handleSearch = async searchTerm => {
+		try {
+			const trimmedSearchTerm = searchTerm.trim();
+
+			if (trimmedSearchTerm === '') {
+				setTableData(tableData);
+				setIsSearching(false);
+				return;
+			}
+			setIsSearching(true);
+
+			const baseQuery = collection(db, 'words');
+			const userFilter = where('userId', '==', authUser.uid);
+			const q = query(
+				baseQuery,
+				userFilter,
+				where('word', '>=', trimmedSearchTerm),
+				where('word', '<=', trimmedSearchTerm + '\uf8ff'),
+			);
+
+			const querySnapshot = await getDocs(q);
+			const searchResults = querySnapshot.docs.map(doc => ({
+				id: doc.id,
+				...doc.data(),
+			}));
+
+			setTableData(searchResults);
+		} catch (error) {
+			console.error('Search error:', error);
+		}
+	};
 	return (
 		<>
 			{isModalOpen && (
 				<Modal onClose={closeModal} onAddWord={handleAddWord} />
 			)}
-			{isLoading && <Loading />}
-			{isLoadingMore && <Loading />}
-			{/* 로딩 중일 때 로딩 스피너 표시 */}
-			{!isLoading && (
-				<div
-					style={{
-						maxWidth: '90rem',
-						margin: '0 auto',
-					}}
-				>
-					{props === 'edit' ? (
-						<div className="flex justify-end ">
-							<button
-								onClick={openModal}
-								type="button"
-								className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
-							>
-								단어추가
-							</button>
-						</div>
-					) : (
-						''
-					)}
-					<table className="border-collapse border table-auto w-full">
-						<thead>
+			<SearchBar onSearch={handleSearch} />
+			<div style={{ maxWidth: '90rem', margin: '0 auto' }}>
+				{props === 'edit' ? (
+					<div className="flex justify-end">
+						<button
+							onClick={openModal}
+							type="button"
+							className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+						>
+							단어추가
+						</button>
+					</div>
+				) : null}
+				<table className="border-collapse border table-auto w-full">
+					<thead>
+						<tr>
+							<th className="border-b border-r dark:border-slate-600 font-medium p-2 pl-4 pt-3 pb-3 text-slate-400 dark:text-slate-200 text-left w-1/12">
+								번호
+							</th>
+							<th className="border-b border-r dark:border-slate-600 font-medium p-4 pl-4 pt-3 pb-3 text-slate-400 dark:text-slate-200 text-left w-1/4">
+								영어
+							</th>
+							<th className="border-b border-r dark:border-slate-600 font-medium p-4 pl-4 pt-3 pb-3 text-slate-400 dark:text-slate-200 text-left w-1/4 min-w-28">
+								뜻
+							</th>
+							<th className="border-b border-r dark:border-slate-600 font-medium p-4 pl-4 pt-3 pb-3 text-slate-400 dark:text-slate-200 text-left w-1/4">
+								<select
+									id="classification"
+									value={classification}
+									name="classification"
+									className="h-full rounded-md border-0 bg-transparent py-0 pl-2 pr-7 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600 font-medium"
+									onChange={e => handleChange(e.target.value)}
+								>
+									<option value={'ALL'} label="전체"></option>
+									<option value={'V'} label="동사"></option>
+									<option value={'N'} label="명사"></option>
+									<option value={'A'} label="형용사"></option>
+									<option value={'AD'} label="부사"></option>
+									<option
+										value={'OTHER'}
+										label="숙어"
+									></option>
+								</select>
+							</th>
+							{props === 'edit' ? (
+								<th
+									className="border-b border-r dark:border-slate-600 font-medium p-4 pl-4 pt-3 pb-3 text-slate-400 dark:text-slate-200 text-left"
+									style={{ width: '12%' }}
+								>
+									편집
+								</th>
+							) : (
+								''
+							)}
+						</tr>
+					</thead>
+					<tbody>
+						{isLoading ? (
 							<tr>
-								<th className="border-b border-r dark:border-slate-600 font-medium p-2 pl-4 pt-3 pb-3 text-slate-400 dark:text-slate-200 text-left w-1/12">
-									번호
-								</th>
-								<th className="border-b border-r dark:border-slate-600 font-medium p-4 pl-4 pt-3 pb-3 text-slate-400 dark:text-slate-200 text-left w-1/4">
-									영어
-								</th>
-								<th className="border-b border-r dark:border-slate-600 font-medium p-4 pl-4 pt-3 pb-3 text-slate-400 dark:text-slate-200 text-left w-1/4 min-w-28">
-									뜻
-								</th>
-								<th className="border-b border-r dark:border-slate-600 font-medium p-4 pl-4 pt-3 pb-3 text-slate-400 dark:text-slate-200 text-left w-1/4">
-									<select
-										id="classification"
-										value={classification}
-										name="classification"
-										className="h-full rounded-md border-0 bg-transparent py-0 pl-2 pr-7 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600 font-medium"
-										onChange={e =>
-											handleChange(e.target.value)
-										}
-									>
-										<option
-											value={'ALL'}
-											label="전체"
-										></option>
-										<option
-											value={'V'}
-											label="동사"
-										></option>
-										<option
-											value={'N'}
-											label="명사"
-										></option>
-										<option
-											value={'A'}
-											label="형용사"
-										></option>
-										<option
-											value={'AD'}
-											label="부사"
-										></option>
-										<option
-											value={'OTHER'}
-											label="숙어"
-										></option>
-									</select>
-								</th>
-								{props === 'edit' ? (
-									<th
-										className="border-b border-r dark:border-slate-600 font-medium p-4 pl-4 pt-3 pb-3 text-slate-400 dark:text-slate-200 text-left"
-										style={{ width: '12%' }}
-									>
-										편집
-									</th>
-								) : (
-									''
-								)}
+								<td colSpan={props === 'edit' ? 5 : 4}>
+									<Loading />
+								</td>
 							</tr>
-						</thead>
-						<tbody>
-							{filteredData.map((data, index) => (
-								<tr key={data.id}>
-									<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
-										{Number(index) + 1}
-									</td>
-									<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
-										{editIndex === index &&
-										props === 'edit' ? (
-											<>
-												<input
-													type="text"
-													name="word"
-													ref={wordRef}
-													defaultValue={data.word}
-													onBlur={handleWordFocusOut}
-													className="border rounded p-0"
-												/>
-												{isCheckWord && (
-													<p className="mt-2 text-sm text-red-600 dark:text-red-500">
-														<span className="font-medium">
-															영어를 올바르게
-															입력하세요.
-														</span>
-													</p>
-												)}
-											</>
-										) : (
-											data.word
-										)}
-									</td>
-									<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
-										{editIndex === index &&
-										props === 'edit' ? (
-											<>
-												<input
-													type="text"
-													ref={meaningRef}
-													defaultValue={data.meaning}
-													name="meaning"
-													onBlur={
-														handleMeaningFocusOut
-													}
-													className="border rounded p-0"
-												/>
-												{isCheckMeaning && (
-													<p className="mt-2 text-sm text-red-600 dark:text-red-500">
-														<span className="font-medium">
-															한글을 올바르게
-															입력하세요.
-														</span>
-													</p>
-												)}
-											</>
-										) : (
-											data.meaning
-										)}
-									</td>
-									<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
-										{editIndex === index &&
-										props === 'edit' ? (
-											<select
-												value={modifyClassification}
-												onChange={handleEditChange}
-												className="border rounded p-0"
-											>
-												<option value="V">동사</option>
-												<option value="A">
-													형용사
-												</option>
-												<option value="N">명사</option>
-												<option value="AD">부사</option>
-												<option value="OTHER">
-													숙어
-												</option>
-											</select>
-										) : (
-											getPartOfSpeech(data.classification)
-										)}
-									</td>
-									{props === 'edit' ? (
+						) : (
+							<>
+								{tableData.map((data, index) => (
+									<tr key={data.id}>
 										<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
-											{editIndex === index ? (
+											{Number(index) + 1}
+										</td>
+										<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
+											{editIndex === index &&
+											props === 'edit' ? (
 												<>
-													<button
-														type="button"
-														onClick={() =>
-															handleSave(data.id)
+													<input
+														type="text"
+														name="word"
+														ref={wordRef}
+														defaultValue={data.word}
+														onBlur={
+															handleWordFocusOut
 														}
-														className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-													>
-														저장
-													</button>
-													<button
-														type="button"
-														onClick={handleCancel}
-														className="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
-													>
-														취소
-													</button>
+														className="border rounded p-0"
+													/>
+													{isCheckWord && (
+														<p className="mt-2 text-sm text-red-600 dark:text-red-500">
+															<span className="font-medium">
+																영어를 올바르게
+																입력하세요.
+															</span>
+														</p>
+													)}
 												</>
 											) : (
-												<>
-													<button
-														type="button"
-														onClick={() =>
-															handleEdit(index)
-														}
-														className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2"
-													>
-														수정
-													</button>
-													<button
-														type="button"
-														onClick={() =>
-															handleRemove(
-																data.id,
-															)
-														}
-														className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
-													>
-														삭제
-													</button>
-												</>
+												data.word
 											)}
 										</td>
-									) : (
-										''
-									)}
+										<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
+											{editIndex === index &&
+											props === 'edit' ? (
+												<>
+													<input
+														type="text"
+														ref={meaningRef}
+														defaultValue={
+															data.meaning
+														}
+														name="meaning"
+														onBlur={
+															handleMeaningFocusOut
+														}
+														className="border rounded p-0"
+													/>
+													{isCheckMeaning && (
+														<p className="mt-2 text-sm text-red-600 dark:text-red-500">
+															<span className="font-medium">
+																한글을 올바르게
+																입력하세요.
+															</span>
+														</p>
+													)}
+												</>
+											) : (
+												data.meaning
+											)}
+										</td>
+										<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
+											{editIndex === index &&
+											props === 'edit' ? (
+												<select
+													value={modifyClassification}
+													onChange={handleEditChange}
+													className="border rounded p-0"
+												>
+													<option value="V">
+														동사
+													</option>
+													<option value="A">
+														형용사
+													</option>
+													<option value="N">
+														명사
+													</option>
+													<option value="AD">
+														부사
+													</option>
+													<option value="OTHER">
+														숙어
+													</option>
+												</select>
+											) : (
+												getPartOfSpeech(
+													data.classification,
+												)
+											)}
+										</td>
+										{props === 'edit' ? (
+											<td className="border-b border-r border-slate-100 dark:border-slate-700 p-2 pl-4 text-slate-500">
+												{editIndex === index ? (
+													<>
+														<button
+															type="button"
+															onClick={() =>
+																handleSave(
+																	data.id,
+																)
+															}
+															className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+														>
+															저장
+														</button>
+														<button
+															type="button"
+															onClick={
+																handleCancel
+															}
+															className="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
+														>
+															취소
+														</button>
+													</>
+												) : (
+													<>
+														<button
+															type="button"
+															onClick={() =>
+																handleEdit(
+																	index,
+																)
+															}
+															className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2"
+														>
+															수정
+														</button>
+														<button
+															type="button"
+															onClick={() =>
+																handleRemove(
+																	data.id,
+																)
+															}
+															className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-4 py-1 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
+														>
+															삭제
+														</button>
+													</>
+												)}
+											</td>
+										) : (
+											''
+										)}
+									</tr>
+								))}
+								<tr ref={lastElementRef}>
+									<td colSpan="4" className="text-center">
+										{isLoadingMore && <Loading />}
+									</td>
 								</tr>
-							))}
-							<tr ref={lastElementRef}>
-								<td colSpan="4" className="text-center"></td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			)}
+							</>
+						)}
+					</tbody>
+				</table>
+			</div>
 		</>
 	);
 };
@@ -572,7 +642,7 @@ export default WordsTable;
 // 		limit(20),
 // 	);
 
-// 	// 두 번째 페이지 이상에서 데이터 로드
+// 	// 두 번째 페이지 이상에 데이터 로드
 // 	const documentSnapshots = await getDocs(q);
 // 	console.log(documentSnapshots);
 

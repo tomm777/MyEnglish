@@ -1,13 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import useDebounce from '../../hooks/useDebounce';
 
-const SearchBar = () => {
+const SearchBar = ({ onSearch }) => {
 	const [searchData, setSearchData] = useState('');
+	const debouncedSearch = useDebounce(searchData, 200);
+	useEffect(() => {
+		if (debouncedSearch) {
+			onSearch(capitalizeWord(debouncedSearch));
+		} else {
+			onSearch('');
+		}
+	}, [debouncedSearch]);
 	const getSearch = e => {
 		e.preventDefault();
-		console.log(searchData);
+		// 빈 검색어 처리
+		if (!searchData.trim()) return;
+		onSearch(capitalizeWord(searchData));
 	};
 	const changeSearchData = e => {
 		setSearchData(e.target.value);
+	};
+	// 첫글자 대문자로 변환
+	const capitalizeWord = str => {
+		const newStr = str.trim();
+		return newStr.charAt(0).toUpperCase() + newStr.slice(1);
 	};
 	return (
 		<form
@@ -41,12 +57,12 @@ const SearchBar = () => {
 					placeholder="Search Mockups, Logos..."
 					required
 				/>
-				<button
+				{/* <button
 					type="submit"
 					className="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-				>
-					Search
-				</button>
+				> */}
+				{/* Search
+				</button> */}
 			</div>
 		</form>
 	);

@@ -3,7 +3,7 @@ import WordsTable from '../../components/Layout/WordsTable';
 const WordsSet = () => {
 	return (
 		<>
-			<div className="mt-10">
+			<div>
 				<WordsTable props="edit" />
 			</div>
 		</>

@@ -107,9 +107,6 @@ const Test = () => {
 				</div>
 				<TestContainer
 					phase={phase}
-					// progress={progress}
-					// activeEnter={activeEnter}
-					// currentWordNum={currentWordNum}
 					loadData={loadData}
 					activeButton={activeButton}
 					isCheck={isCheck}
