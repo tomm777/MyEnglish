@@ -13,9 +13,6 @@ const SearchBar = ({ onSearch }) => {
 	}, [debouncedSearch]);
 	const getSearch = e => {
 		e.preventDefault();
-		// 빈 검색어 처리
-		if (!searchData.trim()) return;
-		onSearch(capitalizeWord(searchData));
 	};
 	const changeSearchData = e => {
 		setSearchData(e.target.value);

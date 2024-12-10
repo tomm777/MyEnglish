@@ -25,8 +25,10 @@ import SearchBar from '../../SearchBar';
 const WordsTable = ({ props }) => {
 	const [editIndex, setEditIndex] = useState(null);
 	const [tableData, setTableData] = useState([]);
+	const [initialData, setInitialData] = useState([]);
+	const [lastData, setLastData] = useState('');
+	// let testData = '';
 	// const [filteredData, setFilteredData] = useState(tableData);
-
 	const [classification, setClassification] = useState('ALL');
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	// 검색 모드
@@ -54,6 +56,7 @@ const WordsTable = ({ props }) => {
 	] = useFocusOutValidation();
 	// 유저 정보
 	const { authUser } = useAuth();
+	// 무한 스크롤 감지
 	useEffect(() => {
 		observerRef.current = new IntersectionObserver(observerCallback);
 		if (lastElementRef.current) {
@@ -102,11 +105,13 @@ const WordsTable = ({ props }) => {
 							...doc.data(),
 						}))
 						.filter(doc => doc.userId === authUser.uid);
-
+					// 검색어를 지울 때 그전의 데이터로 변경
+					setInitialData(updatedData);
 					setTableData(updatedData);
 					setCurrentLength(updatedData.length); // 현재 데이터 길이 업데이트
 
 					if (snapshot.docs.length > 0) {
+						setLastData(snapshot.docs[snapshot.docs.length - 1]);
 						setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
 					} else {
 						setLastVisible(null); // 데이터가 없을 경우 lastVisible 초기화
@@ -155,15 +160,13 @@ const WordsTable = ({ props }) => {
 			return;
 		}
 
-		if (entries[0].isIntersecting && !isLoadingMore) {
+		if (entries[0].isIntersecting && !isLoadingMore && !isSearching) {
 			loadData(); // 다음 데이터 로드
 		}
 	};
 
 	// 추가 데이터 로드
 	const loadData = async () => {
-		console.log('loadData');
-
 		if (!lastVisible) return;
 		setIsLoadingMore(true);
 
@@ -191,7 +194,6 @@ const WordsTable = ({ props }) => {
 				id: doc.id,
 				...doc.data(),
 			}));
-
 			if (nextDocs.length > 0) {
 				setLastVisible(nextData.docs[nextData.docs.length - 1]);
 				setTableData(prevData => {
@@ -355,12 +357,16 @@ const WordsTable = ({ props }) => {
 		return newStr.charAt(0).toUpperCase() + newStr.slice(1);
 	};
 	// 단어 검색
-	const handleSearch = async searchTerm => {
+	const handleSearch = async data => {
 		try {
-			const trimmedSearchTerm = searchTerm.trim();
+			setCurrentLength(0); // 현재 길이 초기화
+			setIsSearching(false); // 검색 모드 초기화
+			const searchData = data.trim();
 
-			if (trimmedSearchTerm === '') {
-				setTableData(tableData);
+			if (searchData === '') {
+				setTableData(initialData);
+				setCurrentLength(initialData.length);
+				setLastVisible(lastData);
 				setIsSearching(false);
 				return;
 			}
@@ -371,8 +377,8 @@ const WordsTable = ({ props }) => {
 			const q = query(
 				baseQuery,
 				userFilter,
-				where('word', '>=', trimmedSearchTerm),
-				where('word', '<=', trimmedSearchTerm + '\uf8ff'),
+				where('word', '>=', searchData),
+				where('word', '<=', searchData + '\uf8ff'),
 			);
 
 			const querySnapshot = await getDocs(q);
@@ -380,7 +386,6 @@ const WordsTable = ({ props }) => {
 				id: doc.id,
 				...doc.data(),
 			}));
-
 			setTableData(searchResults);
 		} catch (error) {
 			console.error('Search error:', error);
