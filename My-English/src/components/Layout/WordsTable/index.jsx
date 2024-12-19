@@ -96,6 +96,7 @@ const WordsTable = ({ props }) => {
 						);
 
 			// Firestore 실시간 업데이트
+			
 			const unsubscribe = onSnapshot(
 				baseQuery,
 				snapshot => {
@@ -108,8 +109,15 @@ const WordsTable = ({ props }) => {
 					// 검색어를 지울 때 그전의 데이터로 변경
 					setInitialData(updatedData);
 					setTableData(updatedData);
+					console.log(updatedData.length);
+					
 					setCurrentLength(updatedData.length); // 현재 데이터 길이 업데이트
+					setTotalLength(snapshot.docs.length)
+					// if(currentLength <= 20){
 
+					// }
+					// console.log(snapshot.docs.length);
+					
 					if (snapshot.docs.length > 0) {
 						setLastData(snapshot.docs[snapshot.docs.length - 1]);
 						setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
@@ -122,7 +130,16 @@ const WordsTable = ({ props }) => {
 				},
 			);
 
-			// 전체 데이터 개수 업데이트 - 즉시 실행
+
+			// updateTotalLength();
+			setIsLoading(false);
+			return () => unsubscribe();
+		} catch (error) {
+			console.error('Error fetching data:', error);
+		}
+	}, [classification, authUser]);
+	
+			// // 전체 데이터 개수 업데이트 - 즉시 실행
 			const updateTotalLength = async () => {
 				const totalQuery =
 					classification === 'ALL'
@@ -140,22 +157,13 @@ const WordsTable = ({ props }) => {
 				setTotalLength(snapshot.docs.length);
 			};
 
-			updateTotalLength();
-			setIsLoading(false);
-			return () => unsubscribe();
-		} catch (error) {
-			console.error('Error fetching data:', error);
-		}
-	}, [classification, authUser]);
-
 	// observe 동작
 	const observerCallback = entries => {
 		console.log(currentLength, totalLength);
 
 		if (
 			window.location.pathname === '/test' ||
-			isSearching || // 검색 중일 때는 무한 스크롤 비활성화
-			totalLength <= currentLength
+			isSearching 
 		) {
 			return;
 		}
@@ -171,6 +179,9 @@ const WordsTable = ({ props }) => {
 		setIsLoadingMore(true);
 
 		try {
+			console.log('LLLLLLLLLLl');
+			updateTotalLength()
+			
 			const nextQuery =
 				classification === 'ALL'
 					? query(
@@ -194,6 +205,7 @@ const WordsTable = ({ props }) => {
 				id: doc.id,
 				...doc.data(),
 			}));
+
 			if (nextDocs.length > 0) {
 				setLastVisible(nextData.docs[nextData.docs.length - 1]);
 				setTableData(prevData => {
@@ -306,8 +318,8 @@ const WordsTable = ({ props }) => {
 			}
 			if (currentLength > 20) {
 				setCurrentLength(prev => (prev > 0 ? prev - 1 : 0));
+				setTotalLength(prev => (prev > 0 ? prev - 1 : 0));
 			}
-			setTotalLength(prev => (prev > 0 ? prev - 1 : 0));
 			setTableData(prevData => prevData.filter(item => item.id !== id));
 		} catch (error) {
 			console.log(error);
@@ -332,19 +344,21 @@ const WordsTable = ({ props }) => {
 				createdAt: Date.now(),
 				userId: authUser.uid, // Add user ID to the word document
 			};
+			await addDoc(collection(db, 'words'), addDateWord);
+			if(currentLength >= 20){
+				setTotalLength(prev => prev + 1);
 
-			const docRef = await addDoc(collection(db, 'words'), addDateWord);
+			}
 			// 초기 데이터는 firebase에서 실시간으로 업데이트 하기때문에 추후의 데이터는 별도로 관리
-			if (currentLength >= 20) {
-				setTableData(prevData => [
-					...prevData,
-					{ id: docRef.id, ...addDateWord }, // Firestore에서 생성된 ID를 포함
-				]);
-			}
-			if (currentLength >= 20) {
-				setCurrentLength(prev => prev + 1);
-			}
-			setTotalLength(prev => prev + 1);
+			// if (currentLength <= 20) {
+			// 	setTableData(prevData => [
+			// 		...prevData,
+			// 		{ id: docRef.id, ...addDateWord }, // Firestore에서 생성된 ID를 포함
+			// 	]);
+			// }
+
+			// if (currentLength >= 20) {
+			// }
 			setIsModalOpen(false); // 모달 닫기
 		} catch (err) {
 			console.log(err);
